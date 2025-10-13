@@ -11,8 +11,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
-
 @RestController
 @RequestMapping("/api/odds")
 @RequiredArgsConstructor
@@ -37,9 +35,8 @@ public class BettingOddsController {
     // GET /api/odds/{id} - Get odds by ID
     @GetMapping("/{id}")
     public ResponseEntity<BettingOdds> getOddsById(@PathVariable Long id) {
-        return service.getOddsById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        BettingOdds odds = service.getOddsById(id);
+        return ResponseEntity.ok(odds);
     }
     
     // GET /api/odds/sport/{sport} - Get odds by sport
@@ -65,72 +62,45 @@ public class BettingOddsController {
 
     //POST /api/odds - Create new odds
     @PostMapping
-    public ResponseEntity<?> createOdds(@RequestBody BettingOdds odds) {
-        try {
-            BettingOdds created = service.createOdds(odds);
-            return ResponseEntity.status(HttpStatus.CREATED).body(created);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
-        }
+    public ResponseEntity<BettingOdds> createOdds(@RequestBody BettingOdds odds) {
+        BettingOdds created = service.createOdds(odds);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     //PUT /api/odds/{id} - Update existing odds
     @PutMapping("/{id}")
     public ResponseEntity<?> updateOdds(@PathVariable Long id, @RequestBody BettingOdds odds) {
-        try {
             BettingOdds updated = service.updateOdds(id, odds);
             return ResponseEntity.ok(updated);
-        } catch (RuntimeException e) {
-            if (e.getMessage().contains("not found")) {
-                return ResponseEntity.notFound().build();
-            }
-            return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
-        }
     }
 
     //PATCH /api/odds/{id}/deactivate - Deactivate odds
     @PatchMapping("/{id}/deactivate")
-    public ResponseEntity<?> deactivateOdds(@PathVariable Long id){
-        try{
-            service.deactivateOdds(id);
-            return ResponseEntity.ok(createSuccessResponse("Odds deactivated successfully"));
-        } catch (RuntimeException e){
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Map<String, String>> deactivateOdds(@PathVariable Long id){
+        service.deactivateOdds(id);
+        return ResponseEntity.ok(createSuccessResponse("Odds deactivated successfully"));
     }
 
     //DELETE /api/odds/{id} - Delete odds permanently
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteOdds(@PathVariable Long id){
-        try{
-            service.deleteOdds(id);
-            return ResponseEntity.ok(createSuccessResponse("Odds deleted successfully"));
-        } catch (RuntimeException e){
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Map<String, String>> deleteOdds(@PathVariable Long id){
+        service.deactivateOdds(id);
+        return ResponseEntity.ok(createSuccessResponse("Odds deleted Successfully"));
     }
 
     // GET /api/odds/{id}/margin - Calculate bookmaker margin for specific odds
     @GetMapping("/{id}/margin")
     public ResponseEntity<?> getBookmakerMargin(@PathVariable Long id) {
-        return service.getOddsById(id)
-                .map(odds -> {
-                    double margin = service.calculateBookmakerMargin(odds);
-                    Map<String, Object> response = new HashMap<>();
-                    response.put("oddsId", id);
-                    response.put("homeTeam", odds.getHomeTeam());
-                    response.put("awayTeam", odds.getAwayTeam());
-                    response.put("marginPercentage", String.format("%.2f%%", margin));
-                    return ResponseEntity.ok(response);
-                })
-                .orElse(ResponseEntity.notFound().build());
-    }  
+        BettingOdds odds = service.getOddsById(id);
+        double margin = service.calculateBookmakerMargin(odds);
 
-    //Helper method to create error response
-    private Map<String, String> createErrorResponse(String message){
-        Map<String, String> error = new HashMap<>();
-        error.put("error", message);
-        return error;
+        Map<String, Object> response = new HashMap<>();
+        response.put("oddsID", id);
+        response.put("homeTeam", odds.getHomeTeam());
+        response.put("awayTeam", odds.getAwayTeam());
+        response.put("marginPercentage", String.format("%.2f%%", margin));
+
+        return ResponseEntity.ok(response);
     }
 
     //Helper method to create success response

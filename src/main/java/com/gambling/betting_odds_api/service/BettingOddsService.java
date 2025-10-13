@@ -1,5 +1,7 @@
 package com.gambling.betting_odds_api.service;
 
+import com.gambling.betting_odds_api.exception.InvalidOddsException;
+import com.gambling.betting_odds_api.exception.ResourceNotFoundException;
 import com.gambling.betting_odds_api.model.BettingOdds;
 import com.gambling.betting_odds_api.repository.BettingOddsRepository;
 import lombok.RequiredArgsConstructor;
@@ -9,12 +11,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class BettingOddsService {
-
+    
     private final BettingOddsRepository repository;
 
     // CREATE - create new betting odds
@@ -40,8 +41,9 @@ public class BettingOddsService {
     }
 
     //READ - get odds by ID
-    public Optional<BettingOdds> getOddsById(Long id){
-        return repository.findById(id);
+    public BettingOdds getOddsById(Long id){
+        return repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Betting Odds", id));
     }
 
     //READ - get odds by sport
@@ -50,7 +52,7 @@ public class BettingOddsService {
     }
 
     //READ - get upgcoming matches
-    public List<BettingOdds> getUpcomingMatches(){
+    public List<BettingOdds> getUpcomingMatches() {
         return repository.findUpcomingMatches(LocalDateTime.now());
     }
 
@@ -64,7 +66,7 @@ public class BettingOddsService {
     public BettingOdds updateOdds(Long id, BettingOdds updatedOdds){
         //Check if there is matching odd
         BettingOdds existing = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Odds not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Betting Odds: ", id));
         
 
         validateOdds(updatedOdds);
@@ -90,7 +92,7 @@ public class BettingOddsService {
     @Transactional
     public void deactivateOdds(Long id){
         BettingOdds odds = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Odds not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Betting Odds: ", id));
 
         odds.setActive(false);
         repository.save(odds);
@@ -100,7 +102,7 @@ public class BettingOddsService {
     @Transactional
     public void deleteOdds(Long id) {
         if (!repository.existsById(id)) {
-            throw new RuntimeException("Odds not found with id: " + id);
+            throw new ResourceNotFoundException("Betting Odds: ", id);
         }
         repository.deleteById(id);
     }
@@ -126,15 +128,15 @@ public class BettingOddsService {
     // VALIDATION - validation of odds
     private void validateOdds(BettingOdds odds){
         //Check if every mandatory fields are filled
-        if (odds.getSport() == null || odds.getSport().trim().isEmpty()){
-            throw new IllegalArgumentException("Sport cannot be empty");
-        }
+        if (odds.getSport() == null || odds.getSport().trim().isEmpty()) {
+        throw new InvalidOddsException("Sport cannot be empty");
+    }
         if (odds.getHomeTeam() == null || odds.getHomeTeam().trim().isEmpty()) {
-            throw new IllegalArgumentException("Home team cannot be empty");
+            throw new InvalidOddsException("Home team cannot be empty");
         }
         
         if (odds.getAwayTeam() == null || odds.getAwayTeam().trim().isEmpty()) {
-            throw new IllegalArgumentException("Away team cannot be empty");
+            throw new InvalidOddsException("Away team cannot be empty");
         }
         
         // Chech if odds are valid (>= 1.01)
@@ -144,18 +146,18 @@ public class BettingOddsService {
         
         // Check that match date is in the future
         if (odds.getMatchDate() != null && odds.getMatchDate().isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("Match date must be in the future");
+            throw new InvalidOddsException("Match date must be in the future");
         }
     }
     
     private void validateOddsValue(BigDecimal oddsValue, String fieldName) {
         if (oddsValue == null) {
-            throw new IllegalArgumentException(fieldName + " cannot be null");
+            throw new InvalidOddsException(fieldName + " cannot be null");
         }
         
         BigDecimal minOdds = new BigDecimal("1.01");
         if (oddsValue.compareTo(minOdds) < 0) {
-            throw new IllegalArgumentException(fieldName + " must be at least 1.01");
+            throw new InvalidOddsException(fieldName + " must be at least 1.01");
         }
     }
 }
