@@ -1,0 +1,38 @@
+package com.gambling.betting_odds_api.repository;
+
+import com.gambling.betting_odds_api.model.BettingOdds;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Repository
+public interface BettingOddsRepository extends JpaRepository<BettingOdds, Long> {
+    // Spring Data JPA automatically will implement these methods on base of name
+    
+    // Find all active odds
+    List<BettingOdds> findByActiveTrue();
+    
+    // Find by sport
+    List<BettingOdds> findBySport(String sport);
+    
+    // Find all active odds for a sport
+    List<BettingOdds> findBySportAndActiveTrue(String sport);
+    
+    // Find by home team
+    List<BettingOdds> findByHomeTeamContainingIgnoreCase(String teamName);
+    
+    // Find matches by between dates
+    List<BettingOdds> findByMatchDateBetween(LocalDateTime startDate, LocalDateTime endDate);
+    
+    // Custom Query - find upcoming matches (in future) whiches are active
+    @Query("SELECT b FROM BettingOdds b WHERE b.matchDate > :currentDate AND b.active = true ORDER BY b.matchDate ASC")
+    List<BettingOdds> findUpcomingMatches(@Param("currentDate") LocalDateTime currentDate);
+    
+    // Custom Query - find matches for specific team (home or away)
+    @Query("SELECT b FROM BettingOdds b WHERE (b.homeTeam = :teamName OR b.awayTeam = :teamName) AND b.active = true")
+    List<BettingOdds> findByTeam(@Param("teamName") String teamName);
+}
