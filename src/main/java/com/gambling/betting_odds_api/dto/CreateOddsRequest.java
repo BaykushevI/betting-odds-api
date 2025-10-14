@@ -10,16 +10,15 @@ import java.time.LocalDateTime;
 
 // DTO for creating new betting odds
 // Client sends this in POST request body
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateOddsRequest {
-
+    
     @NotBlank(message = "Sport is required")
     @Size(min = 2, max = 50, message = "Sport must be between 2 and 50 characters")
     private String sport;
-
+    
     @NotBlank(message = "Home team is required")
     @Size(min = 2, max = 100, message = "Home team must be between 2 and 100 characters")
     private String homeTeam;
@@ -49,5 +48,4 @@ public class CreateOddsRequest {
     
     // Note: We don't accept 'active', 'createdAt', 'updatedAt' from client
     // These are managed by the system
-
 }

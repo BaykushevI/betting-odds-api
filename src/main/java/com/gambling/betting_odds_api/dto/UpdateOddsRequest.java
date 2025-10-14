@@ -1,5 +1,52 @@
 package com.gambling.betting_odds_api.dto;
 
-public class UpdateOddsRequest {
+import jakarta.validation.constraints.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+// DTO for updating existing betting odds
+// Client sends this in PUT request body
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class UpdateOddsRequest {
+    
+    @NotBlank(message = "Sport is required")
+    @Size(min = 2, max = 50, message = "Sport must be between 2 and 50 characters")
+    private String sport;
+    
+    @NotBlank(message = "Home team is required")
+    @Size(min = 2, max = 100, message = "Home team must be between 2 and 100 characters")
+    private String homeTeam;
+    
+    @NotBlank(message = "Away team is required")
+    @Size(min = 2, max = 100, message = "Away team must be between 2 and 100 characters")
+    private String awayTeam;
+    
+    @NotNull(message = "Home odds are required")
+    @DecimalMin(value = "1.01", message = "Home odds must be at least 1.01")
+    @DecimalMax(value = "999.99", message = "Home odds cannot exceed 999.99")
+    private BigDecimal homeOdds;
+    
+    @NotNull(message = "Draw odds are required")
+    @DecimalMin(value = "1.01", message = "Draw odds must be at least 1.01")
+    @DecimalMax(value = "999.99", message = "Draw odds cannot exceed 999.99")
+    private BigDecimal drawOdds;
+    
+    @NotNull(message = "Away odds are required")
+    @DecimalMin(value = "1.01", message = "Away odds must be at least 1.01")
+    @DecimalMax(value = "999.99", message = "Away odds cannot exceed 999.99")
+    private BigDecimal awayOdds;
+    
+    @NotNull(message = "Match date is required")
+    private LocalDateTime matchDate;
+    
+    // Optional: Allow updating active status
+    private Boolean active;
+    
+    // Note: We don't allow updating id, createdAt, updatedAt
 }
