@@ -1,16 +1,21 @@
 **Betting Odds API**
-A RESTful API for managing betting odds for sports matches, built with Spring Boot and PostgreSQL.
+A production-ready RESTful API for managing betting odds for sports matches, built with Spring Boot and PostgreSQL.
 
 **Project Overview**
-This is a learning project demonstrating backend development skills relevant to the gambling industry. It implements a complete CRUD API for managing betting odds with proper validation, business logic, and database integration.
+This is a comprehensive learning project demonstrating professional backend development practices relevant to the gambling industry. It implements a complete CRUD API with:
+- DTO Layer for API/Database separation
+- Bean Validation for input validation
+- Global exception handling
+- Business logic for odds calculations
+- Proper architectural layering
 
 **Technologies Used**
-Java 17 - Programming language
-Spring Boot 3.5.6 - Framework
-Spring Data JPA - Database access layer
-PostgreSQL 18 - Database
-Lombok - Reduce boilerplate code
-Maven - Build tool
+- Java 17 - Programming language
+- Spring Boot 3.5.6 - Framework
+- Spring Data JPA - Database access layer
+- PostgreSQL 18 - Database
+- Lombok - Reduce boilerplate code
+- Maven - Build tool
 
 **Architecture**
 The project follows a layered architecture:
@@ -40,7 +45,7 @@ PATCH     /api/odds/{id}/deactivate  Deactivate odds
 DELETE    /api/odds/{id}             Delete odds
 
 **Database Schema**
-sqlbetting_odds
+betting_odds
 -  id (BIGSERIAL PRIMARY KEY)
 -  sport (VARCHAR NOT NULL)
 -  home_team (VARCHAR NOT NULL)
@@ -62,7 +67,7 @@ Prerequisites
 Installation
 
 Clone the repository
-git clone https://github.com/YOUR_USERNAME/betting-odds-api.git
+git clone https://github.com/BaykushevI/betting-odds-api.git
 cd betting-odds-api
 
 Create PostgreSQL database
