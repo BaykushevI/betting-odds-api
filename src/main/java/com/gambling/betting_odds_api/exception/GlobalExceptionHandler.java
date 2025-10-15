@@ -13,25 +13,26 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-//Global exception handler for all controllers
+// Global exception handler for all controllers
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
-        //Handle ResourceNotFoundException (404)
-        @ExceptionHandler(MethodArgumentNotValidException.class)
-        @ResponseStatus(HttpStatus.BAD_REQUEST)
-        public ResponseEntity<Map<String, Object>> handleValidationException(
-                MethodArgumentNotValidException ex,
-                WebRequest request) {
-
+    
+    // Handle validation errors from @Valid annotation (400)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<Map<String, Object>> handleValidationException(
+            MethodArgumentNotValidException ex,
+            WebRequest request) {
+        
         Map<String, String> fieldErrors = new HashMap<>();
-
+        
         // Extract all field validation errors
         ex.getBindingResult().getAllErrors().forEach(error -> {
-                String fieldName = ((FieldError) error).getField();
-                String errorMessage = error.getDefaultMessage();
-                fieldErrors.put(fieldName, errorMessage);
-        });     
+            String fieldName = ((FieldError) error).getField();
+            String errorMessage = error.getDefaultMessage();
+            fieldErrors.put(fieldName, errorMessage);
+        });
+        
         Map<String, Object> response = new HashMap<>();
         response.put("timestamp", LocalDateTime.now());
         response.put("status", HttpStatus.BAD_REQUEST.value());
@@ -42,54 +43,75 @@ public class GlobalExceptionHandler {
         
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
-
-        // Handle InvalidOddsException (400)
-        @ExceptionHandler(InvalidOddsException.class)
-        public ResponseEntity<ErrorResponse> handleInvalidOddsException(
-                InvalidOddsException ex,
-                WebRequest request){
-                
-            ErrorResponse errorResponse = new ErrorResponse(
+    
+    // Handle ResourceNotFoundException (404)
+    @ExceptionHandler(ResourceNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ResponseEntity<ErrorResponse> handleResourceNotFoundException(
+            ResourceNotFoundException ex, 
+            WebRequest request) {
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                "Not Found",
+                ex.getMessage(),
+                request.getDescription(false).replace("uri=", "")
+        );
+        
+        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+    }
+    
+    // Handle InvalidOddsException (400)
+    @ExceptionHandler(InvalidOddsException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<ErrorResponse> handleInvalidOddsException(
+            InvalidOddsException ex, 
+            WebRequest request) {
+        
+        ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 "Bad Request",
                 ex.getMessage(),
                 request.getDescription(false).replace("uri=", "")
         );
-
+        
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
-        }
-
-        // Handle IllegalArgumentException (400)
-        @ExceptionHandler(IllegalArgumentException.class)
-        public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
-                IllegalAccessException ex,
-                WebRequest request){
-
-           ErrorResponse errorResponse = new ErrorResponse(
+    }
+    
+    // Handle IllegalArgumentException (400)
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
+            IllegalArgumentException ex, 
+            WebRequest request) {
+        
+        ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 "Bad Request",
                 ex.getMessage(),
                 request.getDescription(false).replace("uri=", "")
         );
-
+        
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
-        }
-
-        // Handle all other exceptions (500)
-        @ExceptionHandler(Exception.class)
-        public ResponseEntity<ErrorResponse> handleGlobalException(
-                Exception ex,
-                WebRequest request){
-
-           ErrorResponse errorResponse = new ErrorResponse(
+    }
+    
+    // Handle all other exceptions (500)
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ResponseEntity<ErrorResponse> handleGlobalException(
+            Exception ex, 
+            WebRequest request) {
+        
+        // Log the full exception for debugging
+        ex.printStackTrace();
+        
+        ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Internal Server Error",
                 "An unexpected error occurred: " + ex.getMessage(),
                 request.getDescription(false).replace("uri=", "")
         );
-
+        
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
-
-        }
-
+    }
 }
