@@ -168,13 +168,32 @@ public class BettingOddsController {
     
     // Helper method to build Sort from string array
     private Sort buildSort(String[] sort) {
+        // Debug logging
+        System.out.println("DEBUG: sort array length: " + sort.length);
+        for (int i = 0; i < sort.length; i++) {
+            System.out.println("DEBUG: sort[" + i + "] = '" + sort[i] + "'");
+        }
+        
         Sort.Order[] orders = new Sort.Order[sort.length];
         for (int i = 0; i < sort.length; i++) {
-            String[] sortParams = sort[i].split(",");
-            String property = sortParams[0];
-            Sort.Direction direction = sortParams.length > 1 && "desc".equalsIgnoreCase(sortParams[1])
+            String sortParam = sort[i];
+            System.out.println("DEBUG: Processing sortParam: '" + sortParam + "'");
+            
+            String[] sortParams = sortParam.split(",");
+            System.out.println("DEBUG: After split, length: " + sortParams.length);
+            
+            if (sortParams.length == 0) {
+                throw new IllegalArgumentException("Invalid sort parameter: " + sortParam);
+            }
+            
+            String property = sortParams[0].trim();
+            System.out.println("DEBUG: Property: '" + property + "'");
+            
+            Sort.Direction direction = sortParams.length > 1 && "desc".equalsIgnoreCase(sortParams[1].trim())
                     ? Sort.Direction.DESC
                     : Sort.Direction.ASC;
+            System.out.println("DEBUG: Direction: " + direction);
+            
             orders[i] = new Sort.Order(direction, property);
         }
         return Sort.by(orders);
