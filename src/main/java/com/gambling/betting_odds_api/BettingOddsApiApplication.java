@@ -9,5 +9,5 @@ public class BettingOddsApiApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(BettingOddsApiApplication.class, args);
 	}
-
+	
 }

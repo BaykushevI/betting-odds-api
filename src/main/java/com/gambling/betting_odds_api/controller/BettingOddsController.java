@@ -15,7 +15,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/api/odds")
@@ -34,7 +36,7 @@ public class BettingOddsController {
     public ResponseEntity<PageResponse<OddsResponse>> getAllOdds(
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size,
-            @RequestParam(required = false) String[] sort) {
+            @RequestParam(required = false) List<String> sort) {
         
         Pageable pageable = buildPageable(page, size, sort);
         PageResponse<OddsResponse> response = service.getAllOdds(pageable);
@@ -46,7 +48,7 @@ public class BettingOddsController {
     public ResponseEntity<PageResponse<OddsResponse>> getActiveOdds(
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size,
-            @RequestParam(required = false) String[] sort) {
+            @RequestParam(required = false) List<String> sort) {
         
         Pageable pageable = buildPageable(page, size, sort);
         PageResponse<OddsResponse> response = service.getActiveOdds(pageable);
@@ -66,7 +68,7 @@ public class BettingOddsController {
             @PathVariable String sport,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size,
-            @RequestParam(required = false) String[] sort) {
+            @RequestParam(required = false) List<String> sort) {
         
         Pageable pageable = buildPageable(page, size, sort);
         PageResponse<OddsResponse> response = service.getOddsBySport(sport, pageable);
@@ -78,7 +80,7 @@ public class BettingOddsController {
     public ResponseEntity<PageResponse<OddsResponse>> getUpcomingMatches(
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size,
-            @RequestParam(required = false) String[] sort) {
+            @RequestParam(required = false) List<String> sort) {
         
         Pageable pageable = buildPageable(page, size, sort);
         PageResponse<OddsResponse> response = service.getUpcomingMatches(pageable);
@@ -91,7 +93,7 @@ public class BettingOddsController {
             @PathVariable String teamName,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size,
-            @RequestParam(required = false) String[] sort) {
+            @RequestParam(required = false) List<String> sort) {
         
         Pageable pageable = buildPageable(page, size, sort);
         PageResponse<OddsResponse> response = service.getMatchesForTeam(teamName, pageable);
@@ -144,10 +146,10 @@ public class BettingOddsController {
     }
     
     // Helper method to build Pageable with sorting
-    private Pageable buildPageable(Integer page, Integer size, String[] sort) {
+    private Pageable buildPageable(Integer page, Integer size, List<String> sort) {
         // If no pagination params, return unpaged (all results)
         if (page == null && size == null) {
-            if (sort != null && sort.length > 0) {
+            if (sort != null && !sort.isEmpty()) {
                 return Pageable.unpaged(buildSort(sort));
             }
             return Pageable.unpaged();
@@ -159,43 +161,66 @@ public class BettingOddsController {
         if (pageSize > 100) pageSize = 100; // Max 100 items per page
         
         // Build sort
-        Sort sortObj = (sort != null && sort.length > 0) 
+        Sort sortObj = (sort != null && !sort.isEmpty()) 
                 ? buildSort(sort) 
                 : Sort.by(Sort.Direction.DESC, "id"); // Default: newest first
         
         return PageRequest.of(pageNumber, pageSize, sortObj);
     }
     
-    // Helper method to build Sort from string array
-    private Sort buildSort(String[] sort) {
+    // Helper method to build Sort from List of strings
+    private Sort buildSort(List<String> sort) {
         // Debug logging
-        System.out.println("DEBUG: sort array length: " + sort.length);
-        for (int i = 0; i < sort.length; i++) {
-            System.out.println("DEBUG: sort[" + i + "] = '" + sort[i] + "'");
+        System.out.println("DEBUG: sort list size: " + sort.size());
+        for (int i = 0; i < sort.size(); i++) {
+            System.out.println("DEBUG: sort[" + i + "] = '" + sort.get(i) + "'");
         }
         
-        Sort.Order[] orders = new Sort.Order[sort.length];
-        for (int i = 0; i < sort.length; i++) {
-            String sortParam = sort[i];
-            System.out.println("DEBUG: Processing sortParam: '" + sortParam + "'");
+        // First, we need to flatten the list by splitting each element by comma
+        // Input: ["sport,asc", "homeOdds,desc"]
+        // After flatten: ["sport", "asc", "homeOdds", "desc"]
+        List<String> flattened = new ArrayList<>();
+        for (String sortParam : sort) {
+            String[] parts = sortParam.split(",");
+            for (String part : parts) {
+                flattened.add(part.trim());
+            }
+        }
+        
+        System.out.println("DEBUG: After flattening, size: " + flattened.size());
+        for (int i = 0; i < flattened.size(); i++) {
+            System.out.println("DEBUG: flattened[" + i + "] = '" + flattened.get(i) + "'");
+        }
+        
+        // Now check if we have even number of elements (property, direction pairs)
+        if (flattened.size() % 2 != 0) {
+            throw new IllegalArgumentException("Sort parameters must come in pairs (property, direction). Got " + flattened.size() + " parameters after splitting.");
+        }
+        
+        // Process pairs: [property, direction, property, direction, ...]
+        int pairCount = flattened.size() / 2;
+        Sort.Order[] orders = new Sort.Order[pairCount];
+        
+        for (int i = 0; i < flattened.size(); i += 2) {
+            String property = flattened.get(i);
+            String directionStr = flattened.get(i + 1);
             
-            String[] sortParams = sortParam.split(",");
-            System.out.println("DEBUG: After split, length: " + sortParams.length);
+            System.out.println("DEBUG: Pair " + (i/2) + " - Property: '" + property + "', Direction: '" + directionStr + "'");
             
-            if (sortParams.length == 0) {
-                throw new IllegalArgumentException("Invalid sort parameter: " + sortParam);
+            // Parse direction
+            Sort.Direction direction;
+            if ("desc".equalsIgnoreCase(directionStr)) {
+                direction = Sort.Direction.DESC;
+            } else if ("asc".equalsIgnoreCase(directionStr)) {
+                direction = Sort.Direction.ASC;
+            } else {
+                throw new IllegalArgumentException("Invalid sort direction: '" + directionStr + "'. Must be 'asc' or 'desc'.");
             }
             
-            String property = sortParams[0].trim();
-            System.out.println("DEBUG: Property: '" + property + "'");
-            
-            Sort.Direction direction = sortParams.length > 1 && "desc".equalsIgnoreCase(sortParams[1].trim())
-                    ? Sort.Direction.DESC
-                    : Sort.Direction.ASC;
-            System.out.println("DEBUG: Direction: " + direction);
-            
-            orders[i] = new Sort.Order(direction, property);
+            System.out.println("DEBUG: Creating Sort.Order: property='" + property + "', direction=" + direction);
+            orders[i / 2] = new Sort.Order(direction, property);
         }
+        
         return Sort.by(orders);
     }
 }
