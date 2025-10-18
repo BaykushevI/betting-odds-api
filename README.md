@@ -238,15 +238,33 @@ PUT http://localhost:8080/api/odds/1
 }
 Response (200 OK)
 {
-  "id": 1,
-  "homeOdds": 2.20,
-  "drawOdds": 3.30,
-  "awayOdds": 3.50,
-  "updatedAt": "2025-10-13T02:00:00",
-  ...
+    "id": 1,
+    "sport": "Football",
+    "homeTeam": "Barcelona",
+    "awayTeam": "Real Madrid",
+    "homeOdds": 2.20,
+    "drawOdds": 3.30,
+    "awayOdds": 3.50,
+    "matchDate": "2025-10-20T20:00:00",
+    "active": true,
+    "createdAt": "2025-10-13T21:42:55.077886",
+    "updatedAt": "2025-10-13T21:59:00.313844",
+    "impliedProbabilityHome": null,
+    "impliedProbabilityDraw": null,
+    "impliedProbabilityAway": null,
+    "bookmakerMargin": null
 }
 ------------------
 Error Handling - Not Found
+GET http://localhost:8080/api/odds/999
+Response (404 Not Found):
+{
+  "timestamp": "2025-10-13T02:05:00",
+  "status": 404,
+  "error": "Not Found",
+  "message": "Betting Odds not found with id: 999",
+  "path": "/api/odds/999"
+}
 ------------------
 Business Logic Explanation:
 - impliedProbabilityHome = 1 / 2.10 = 47.6%
@@ -272,23 +290,66 @@ Get Active Odds
 GET http://localhost:8080/api/odds/active
 
 **Learning Outcomes**
-This project demonstrates:
-- RESTful API design principles
-- Layered architecture (Controller-Service-Repository)
-- Spring Boot dependency injection
-- JPA/Hibernate ORM
-- Database relationship mapping
-- Input validation and error handling
-- Business logic implementation (margin calculation)
+Architecture & Design
+- Layered Architecture - Clear separation between Controller, Service, Repository layers
+- DTO Pattern - Separate API contracts from database entities for flexibility
+- Mapper Pattern - Clean conversion between DTOs and Entities
+- Repository Pattern - Abstract database access with Spring Data JPA
+
+Best Practices
+- Bean Validation - Declarative input validation with Jakarta Validation API
+- Global Exception Handling - Centralized error handling with @RestControllerAdvice
+- RESTful API Design - Proper HTTP methods, status codes, and resource naming
+- Transaction Management - ACID compliance with @Transactional
+- Dependency Injection - Loose coupling with Spring's IoC container
+
+Code Quality
+- Clean Code - Readable, maintainable code with proper naming conventions
+- DRY Principle - Code reuse with mappers and service methods
+- Single Responsibility - Each class has one clear purpose
+- Lombok - Reduced boilerplate with annotations
+
+Domain Knowledge
+- Gambling Industry Concepts - Odds formats, implied probabilities, bookmaker margins
+- Business Logic - Real-world calculations for betting operations
+- Data Validation - Industry-standard odds constraints (min 1.01)
+
+Technologies Mastered
+- Spring Boot ecosystem (Web, Data JPA, Validation)
+- PostgreSQL database operations
+- RESTful API development
+- Maven build management
 - Git version control
 
 **Future Enhancements**
-- Add user authentication (Spring Security)
-- Implement real-time odds updates (WebSockets)
-- Add integration with payment systems
-- Implement betting slip management
-- Add comprehensive unit and integration tests
-- Deploy to cloud (AWS/Azure)
+Phase 2 - Advanced Features
+- Pagination & Sorting - Handle large datasets efficiently
+- Advanced Search & Filtering - Complex query combinations
+- Logging & Audit Trail - Track all operations for compliance
+- API Documentation - Swagger/OpenAPI integration
+- Unit & Integration Tests - Comprehensive test coverage
+
+Phase 3 - Production Ready
+- Spring Security - Authentication and authorization
+- JWT Tokens - Stateless authentication
+- Rate Limiting - Protect against abuse
+- Caching - Redis for performance optimization
+- Monitoring - Actuator metrics and health checks
+
+Phase 4 - Gambling Platform
+- User Management - Player accounts and wallets
+- Betting Slip Management - Place and track bets
+- Real-time Odds Updates - WebSocket integration
+- Payment Integration - Payment gateway integration
+- Bet Settlement - Automatic winning calculations
+- Reporting - Financial reports and analytics
+
+Phase 5 - Deployment
+- Docker - Containerization
+- CI/CD Pipeline - GitHub Actions
+- Cloud Deployment - AWS/Azure deployment
+- Database Migration - Flyway/Liquibase
+- Load Balancing - Horizontal scaling
 
 **Author**
 Iliyan Baykushev
