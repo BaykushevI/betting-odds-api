@@ -5,6 +5,12 @@ import com.gambling.betting_odds_api.dto.OddsResponse;
 import com.gambling.betting_odds_api.dto.PageResponse;
 import com.gambling.betting_odds_api.dto.UpdateOddsRequest;
 import com.gambling.betting_odds_api.service.BettingOddsService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -25,7 +31,17 @@ import java.util.ArrayList;
 public class BettingOddsController {
     
     private final BettingOddsService service;
-    
+
+    @Operation(
+            summary = "Get all betting odds",
+            description = "Retrieve all betting odds with optional pagination and sorting." +
+                    "Use page and size parameters for pagination: " +
+                    "Use sort parameter in the format 'property,direction' (e.g., 'sort,asc')."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved odds",
+                    content = @Content(schema = @Schema(implementation = PageResponse.class)))
+    })
     // GET /api/odds - Get all odds (supports pagination and sorting)
     // Examples:
     // /api/odds - get all (unpaginated)
@@ -34,8 +50,12 @@ public class BettingOddsController {
     // /api/odds?page=0&size=10&sort=sport,asc&sort=homeOdds,desc - multiple sort fields
     @GetMapping
     public ResponseEntity<PageResponse<OddsResponse>> getAllOdds(
+            @Parameter(description = "Page number (0-based index)", example = "0")
             @RequestParam(required = false) Integer page,
+            @Parameter(description = "Number of items per page (max 100)", example = "20")
             @RequestParam(required = false) Integer size,
+            @Parameter(description = "Sorting criteria in the format: property,direction. " +
+                    "Multiple sort parameters are supported.", example = "sport,asc")
             @RequestParam(required = false) List<String> sort) {
         
         Pageable pageable = buildPageable(page, size, sort);
@@ -100,9 +120,20 @@ public class BettingOddsController {
         return ResponseEntity.ok(response);
     }
     
+    @Operation(summary = "Create new betting odds", description = "Create a new odds entry for a sports match.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Odds created successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input data")
+    })
     // POST /api/odds - Create new odds
     @PostMapping
-    public ResponseEntity<OddsResponse> createOdds(@Valid @RequestBody CreateOddsRequest request) {
+    public ResponseEntity<OddsResponse> createOdds(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Details of the odds to be created",
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = CreateOddsRequest.class))
+            )    
+        @Valid @RequestBody CreateOddsRequest request) {
         OddsResponse created = service.createOdds(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
