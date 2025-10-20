@@ -14,13 +14,15 @@ This is a comprehensive learning project demonstrating professional backend deve
 - Spring Boot 3.5.6 - Framework
 - Spring Data JPA - Database access layer
 - Spring Valudation - Bean validation (Jakarta Validation)
+- Spring Boot Actuator - Production-ready monitoring and management
 - PostgreSQL 18 - Relational Database
+- Springdoc OpenAPI 2.8.8 - Swagger/OpenAPI documentation
 - Lombok - Reduce boilerplate code
-- Maven - Build tool
+- Maven - Build and dependency management
 
 **Architecture**
 The project follows a clean, layered architecture with separation of concerns:
-Client (Postman, Browser) -> HTTP Requests (JSON)
+- Client (Postman, Browser) -> HTTP Requests (JSON)
 - Controller Layer (REST API Endpoints) -> DTOs (CreateOddsRequest, OddsResponse)
   - Handles HTTP requests/responses
   - Validates input with @Valid
@@ -59,20 +61,32 @@ Technical Feautures
 - Comprehensive validation rules
 - Clean separation of concerns
 - Advanced pagination with multiple sort fields
+- Swagger/OpenAPI interactive documentation
+- Spring Boot Actuator for monitoring and health checks
 
 **API Endpoints**
-Method    Endpoint                   Description                  Request body        Response
-GET       /api/odds                  Get all odds                 -                   List<OddsResponse>
-GET       /api/odds/active           Get active odds only         -                   List<OddsResponse>
-GET       /api/odds/{id}             Get odds by ID               -                   OddsResponse
-GET       /api/odds/sport/{sport}    Get odds by sport            -                   List<OddsResponse>
-GET       /api/odds/upcoming         Get upcoming matches         -                   List<OddsResponse>
-GET       /api/odds/team/{teamName}  Get matches for team         -                   List<OddsResponse>
-GET       /api/odds/{id}/margin      Calculate bookmaker margin   -                   OddsResponse (with computed fields)
-POST      /api/odds                  Create new odds              CreateOddsRequest   OddsResponse 
-PUT       /api/odds/{id}             Update odds                  UpdateOddsRequest   OddsResponse 
-PATCH     /api/odds/{id}/deactivate  Deactivate odds              -                   Success message
-DELETE    /api/odds/{id}             Delete odds                  -                   Success message
+Odds Management
+All GET endpoints support pagination and sorting. Use query parameters:
+- page - Page number (0-indexed) 
+- size - Items per page (defauld:20, max:100)
+- sort - Sort field and direction (format: property, direction)
+
+Examples:
+- /api/odds?page=0&size=10 - First page, 10 items
+- /api/odds?sort=matchDate,desc - Sort by date descending
+- /api/odds?page=1&size=20&sort=sport,asc&sort=homeOdds,desc - Multiple sort fields
+Method    Endpoint                   Description                  Request body        Response                              Pagination
+GET       /api/odds                  Get all odds                 -                   List<OddsResponse>                    Y
+GET       /api/odds/active           Get active odds only         -                   List<OddsResponse>                    Y
+GET       /api/odds/{id}             Get odds by ID               -                   OddsResponse                          N
+GET       /api/odds/sport/{sport}    Get odds by sport            -                   List<OddsResponse>                    Y
+GET       /api/odds/upcoming         Get upcoming matches         -                   List<OddsResponse>                    Y
+GET       /api/odds/team/{teamName}  Get matches for team         -                   List<OddsResponse>                    Y
+GET       /api/odds/{id}/margin      Calculate bookmaker margin   -                   OddsResponse (with computed fields)   N
+POST      /api/odds                  Create new odds              CreateOddsRequest   OddsResponse                          N
+PUT       /api/odds/{id}             Update odds                  UpdateOddsRequest   OddsResponse                          N
+PATCH     /api/odds/{id}/deactivate  Deactivate odds              -                   Success message                       N
+DELETE    /api/odds/{id}             Delete odds                  -                   Success message                       N
 
 **Database Schema**
 betting_odds
@@ -96,7 +110,7 @@ Indexes:
 
 **Setup Instructions**
 Prerequisites
-- Java 17 or higher
+- Java 21 or higher
 - PostgreSQL 18
 - Maven 3.9+
 - Postman (for API testing)
@@ -113,7 +127,7 @@ CREATE DATABASE betting_test;
 properties:
 spring.datasource.url=jdbc:postgresql://localhost:5432/betting_test
 spring.datasource.username=postgres
-spring.datasource.password=
+spring.datasource.password=admin123
 
 4.Install dependencies
 mvn clean install
@@ -124,6 +138,14 @@ mvn spring-boot:run
 The API will be available at http://localhost:8080
 
 Quick test:
+
+Via Swagger UI:
+1. Open http://localhost:8080/swagger-ui.html
+2. Find POST /api/odds endpoint
+3. Click "Try it out"
+4. Use the example JSON or modify it
+5. Click "Execute"
+
 Use Postman to create your odds:
 ------------------
 POST http://localhost:8080/api/odds
@@ -275,7 +297,7 @@ The bookmaker's profit margin is 4.8%!
 
 **Example Usage**
 Create Odds
-bashPOST http://localhost:8080/api/odds
+POST http://localhost:8080/api/odds
 Content-Type: application/json
 {
   "sport": "Football",
@@ -288,6 +310,17 @@ Content-Type: application/json
 }
 Get Active Odds
 GET http://localhost:8080/api/odds/active
+-------------------------
+
+
+**API Documentation & Monitoring**
+After starting the application, access:
+URL                                                 Description
+http://localhost:8080/swagger-ui.html               Interactive API documentation with "Try it out" functionality
+http://localhost:8080/api-docs                      OpenAPI 3.0 specification (JSON format)
+http://localhost:8080/actuator/health               Application health check
+http://localhost:8080/actuator/info                 Application information and metadata
+http://localhost:8080/actuator/metrics              Application metrics (memory, HTTP requests, etc.)
 
 **Learning Outcomes**
 Architecture & Design
