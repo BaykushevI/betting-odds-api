@@ -1,25 +1,37 @@
 package com.gambling.betting_odds_api.controller;
 
+// Internal project imports
 import com.gambling.betting_odds_api.dto.CreateOddsRequest;
 import com.gambling.betting_odds_api.dto.OddsResponse;
 import com.gambling.betting_odds_api.dto.PageResponse;
 import com.gambling.betting_odds_api.dto.UpdateOddsRequest;
 import com.gambling.betting_odds_api.service.BettingOddsService;
+
+// Swagger/OpenAPI imports
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
+// Jakarta imports
 import jakarta.validation.Valid;
+
+// Lombok
 import lombok.RequiredArgsConstructor;
+
+// Spring Data
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+
+// Spring Web
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+// Java standard library imports
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
