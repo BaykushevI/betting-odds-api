@@ -43,9 +43,18 @@
 ## Version Management
 All Spring Boot dependencies versions are managed by `spring-boot-starter-parent:3.5.6`
 
+Check version in `pom.xml` under `<parent>` section.
+
+## Useful Maven Commands
+
 ## Dependency Tree
 mvn dependency:tree
 
-
-## Update Dependencies
+### Check for dependency updates:
 mvn versions:display-dependency-updates
+
+### View effective POM (with all resolved versions):
+mvn help:effective-pom
+
+### View project info:
+mvn help:evaluate -Dexpression=project
