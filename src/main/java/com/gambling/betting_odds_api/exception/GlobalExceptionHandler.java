@@ -1,69 +1,40 @@
 package com.gambling.betting_odds_api.exception;
 
-// ═══════════════════════════════════════════════════════════════════════════
 // INTERNAL PROJECT IMPORTS
-// ═══════════════════════════════════════════════════════════════════════════
-// Logging - Professional logging system
 import com.gambling.betting_odds_api.logging.AuditLogger;
 import com.gambling.betting_odds_api.logging.SecurityLogger;
 
-// ═══════════════════════════════════════════════════════════════════════════
-// LOMBOK - Reduces boilerplate code
-// ═══════════════════════════════════════════════════════════════════════════
+// LOMBOK
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-// ═══════════════════════════════════════════════════════════════════════════
-// SPRING WEB - HTTP response handling
-// ═══════════════════════════════════════════════════════════════════════════
+// SPRING WEB
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-// ═══════════════════════════════════════════════════════════════════════════
-// SPRING VALIDATION - Bean validation support
-// ═══════════════════════════════════════════════════════════════════════════
+// SPRING VALIDATION
 import org.springframework.validation.FieldError;
 
-// ═══════════════════════════════════════════════════════════════════════════
 // SPRING WEB - Exception handling
-// ═══════════════════════════════════════════════════════════════════════════
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
-// ═══════════════════════════════════════════════════════════════════════════
-// JAVA STANDARD LIBRARY - Core Java classes
-// ═══════════════════════════════════════════════════════════════════════════
+// JAVA STANDARD LIBRARY
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * GlobalExceptionHandler - Centralized exception handling with comprehensive logging.
- * 
- * Logging Strategy:
- * - Standard logging (log.*) for all exceptions
- * - AuditLogger for tracking validation failures
- * - SecurityLogger for detecting suspicious patterns
- */
 @RestControllerAdvice
 @RequiredArgsConstructor
 @Slf4j
 public class GlobalExceptionHandler {
     
-    // ═══════════════════════════════════════════════════════════════════════
-    // DEPENDENCIES - Injected via constructor
-    // ═══════════════════════════════════════════════════════════════════════
-    
     private final AuditLogger auditLogger;
     private final SecurityLogger securityLogger;
-    
-    // ═══════════════════════════════════════════════════════════════════════
-    // VALIDATION ERRORS - 400 Bad Request
-    // ═══════════════════════════════════════════════════════════════════════
     
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -71,7 +42,6 @@ public class GlobalExceptionHandler {
             MethodArgumentNotValidException ex,
             WebRequest request) {
         
-        // Extract field-specific validation errors
         Map<String, String> fieldErrors = new HashMap<>();
         
         ex.getBindingResult().getAllErrors().forEach(error -> {
@@ -80,30 +50,24 @@ public class GlobalExceptionHandler {
             fieldErrors.put(fieldName, errorMessage);
         });
         
-        // Extract endpoint path
         String endpoint = extractEndpoint(request);
         
-        // Build error summary for logging
         String errorSummary = fieldErrors.entrySet().stream()
                 .map(e -> e.getKey() + ":" + e.getValue())
                 .collect(Collectors.joining(", "));
         
-        // Standard logging
         log.warn("Validation failed for {}: {}", endpoint, errorSummary);
         
-        // Audit log - track validation failures for compliance
         auditLogger.logValidationFailure(endpoint, errorSummary);
         
-        // Security log - detect suspicious patterns
-        if (containsSuspiciousInput(fieldErrors)) {
-            securityLogger.logMaliciousValidationFailure(
-                endpoint, 
-                errorSummary, 
-                1 // In future, track attempt count per IP/user
-            );
+        // Check BOTH error messages AND actual input values for suspicious patterns
+        boolean hasSuspiciousInput = containsSuspiciousInput(fieldErrors) || 
+                                      containsSuspiciousRejectedValues(ex);
+        
+        if (hasSuspiciousInput) {
+            securityLogger.logMaliciousValidationFailure(endpoint, errorSummary, 1);
         }
         
-        // Build error response
         Map<String, Object> response = new HashMap<>();
         response.put("timestamp", LocalDateTime.now());
         response.put("status", HttpStatus.BAD_REQUEST.value());
@@ -115,10 +79,6 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
     
-    // ═══════════════════════════════════════════════════════════════════════
-    // RESOURCE NOT FOUND - 404 Not Found
-    // ═══════════════════════════════════════════════════════════════════════
-    
     @ExceptionHandler(ResourceNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ResponseEntity<ErrorResponse> handleResourceNotFoundException(
@@ -127,11 +87,7 @@ public class GlobalExceptionHandler {
         
         String endpoint = extractEndpoint(request);
         
-        // Standard logging
         log.warn("Resource not found: {} at {}", ex.getMessage(), endpoint);
-        
-        // Note: No audit/security logging for 404s - they're common and not suspicious
-        // Unless we detect a pattern (e.g., scanning for valid IDs)
         
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
@@ -143,10 +99,6 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
     }
     
-    // ═══════════════════════════════════════════════════════════════════════
-    // INVALID ODDS - 400 Bad Request
-    // ═══════════════════════════════════════════════════════════════════════
-    
     @ExceptionHandler(InvalidOddsException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<ErrorResponse> handleInvalidOddsException(
@@ -155,17 +107,14 @@ public class GlobalExceptionHandler {
         
         String endpoint = extractEndpoint(request);
         
-        // Standard logging
         log.warn("Invalid odds: {} at {}", ex.getMessage(), endpoint);
         
-        // Audit log - business rule violation
         auditLogger.logValidationFailure(endpoint, "InvalidOdds: " + ex.getMessage());
         
-        // Security log - might indicate fraud attempt
         securityLogger.logInvalidOdds(
-            "Unknown", // homeTeam - not available in exception
-            "Unknown", // awayTeam - not available in exception
-            0.0, 0.0, 0.0, // odds values - not available
+            "Unknown", 
+            "Unknown", 
+            0.0, 0.0, 0.0,
             ex.getMessage()
         );
         
@@ -179,10 +128,6 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
     
-    // ═══════════════════════════════════════════════════════════════════════
-    // ILLEGAL ARGUMENT - 400 Bad Request
-    // ═══════════════════════════════════════════════════════════════════════
-    
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
@@ -191,10 +136,8 @@ public class GlobalExceptionHandler {
         
         String endpoint = extractEndpoint(request);
         
-        // Standard logging
         log.warn("Illegal argument: {} at {}", ex.getMessage(), endpoint);
         
-        // Check if this looks like an injection attempt
         String message = ex.getMessage();
         if (message != null && containsSqlInjectionPattern(message)) {
             securityLogger.logSqlInjectionAttempt(endpoint, message);
@@ -210,10 +153,6 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
     
-    // ═══════════════════════════════════════════════════════════════════════
-    // CATCH-ALL - 500 Internal Server Error
-    // ═══════════════════════════════════════════════════════════════════════
-    
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ResponseEntity<ErrorResponse> handleGlobalException(
@@ -222,10 +161,8 @@ public class GlobalExceptionHandler {
         
         String endpoint = extractEndpoint(request);
         
-        // Standard logging with full stack trace
         log.error("Unexpected error at {}: {}", endpoint, ex.getMessage(), ex);
         
-        // Audit log - unexpected errors should be tracked
         auditLogger.logCustomEvent(
             "UNEXPECTED_ERROR",
             String.format("Endpoint=%s, Error=%s", endpoint, ex.getMessage())
@@ -241,30 +178,15 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
     
-    // ═══════════════════════════════════════════════════════════════════════
     // HELPER METHODS
-    // ═══════════════════════════════════════════════════════════════════════
     
-    /**
-     * Extract clean endpoint path from request.
-     */
     private String extractEndpoint(WebRequest request) {
         return request.getDescription(false).replace("uri=", "");
     }
     
-    /**
-     * Check if validation errors contain suspicious patterns.
-     * 
-     * Suspicious indicators:
-     * - SQL keywords in errors (', --, UNION, SELECT)
-     * - Script tags in errors (<script>, <iframe>)
-     * - Path traversal in errors (../, ..\)
-     * - Null bytes (\0)
-     */
     private boolean containsSuspiciousInput(Map<String, String> fieldErrors) {
         String allErrors = fieldErrors.toString().toLowerCase();
         
-        // SQL injection patterns
         if (allErrors.contains("'") || 
             allErrors.contains("--") || 
             allErrors.contains("union") || 
@@ -274,7 +196,6 @@ public class GlobalExceptionHandler {
             return true;
         }
         
-        // XSS patterns
         if (allErrors.contains("<script") || 
             allErrors.contains("<iframe") ||
             allErrors.contains("javascript:") ||
@@ -282,7 +203,6 @@ public class GlobalExceptionHandler {
             return true;
         }
         
-        // Path traversal
         if (allErrors.contains("../") || allErrors.contains("..\\")) {
             return true;
         }
@@ -290,9 +210,6 @@ public class GlobalExceptionHandler {
         return false;
     }
     
-    /**
-     * Check if string contains SQL injection pattern.
-     */
     private boolean containsSqlInjectionPattern(String input) {
         if (input == null) return false;
         
@@ -308,42 +225,41 @@ public class GlobalExceptionHandler {
                lower.contains(";");
     }
     
-    // ═══════════════════════════════════════════════════════════════════════
-    // FUTURE ENHANCEMENTS (Phase 3: Security & Authentication)
-    // ═══════════════════════════════════════════════════════════════════════
-    
     /**
-     * Future exception handlers to add:
-     * 
-     * @ExceptionHandler(AccessDeniedException.class)
-     * - Log unauthorized access attempts
-     * - Track patterns (same user trying multiple restricted endpoints)
-     * - Alert on privilege escalation attempts
-     * 
-     * @ExceptionHandler(AuthenticationException.class)
-     * - Log failed authentication
-     * - Track brute force attempts (same IP, multiple failures)
-     * - Alert on credential stuffing patterns
-     * 
-     * @ExceptionHandler(RateLimitExceededException.class)
-     * - Log rate limit violations
-     * - Track source IP and patterns
-     * - Detect distributed attacks (multiple IPs)
-     * 
-     * @ExceptionHandler(DataIntegrityViolationException.class)
-     * - Log database constraint violations
-     * - Might indicate bug or malicious data manipulation
-     * 
-     * IP Tracking Enhancement:
-     * - Extract client IP from request
-     * - Track failed attempts per IP
-     * - Auto-block after N failures
-     * - Log IP geolocation for suspicious activity
-     * 
-     * Example:
-     * private String extractClientIp(HttpServletRequest request) {
-     *     String xForwardedFor = request.getHeader("X-Forwarded-For");
-     *     return (xForwardedFor != null) ? xForwardedFor.split(",")[0] : request.getRemoteAddr();
-     * }
+     * Check if rejected values contain suspicious patterns.
+     * This checks the ACTUAL INPUT VALUES, not just error messages.
      */
+    private boolean containsSuspiciousRejectedValues(MethodArgumentNotValidException ex) {
+        return ex.getBindingResult().getFieldErrors().stream()
+                .anyMatch(error -> {
+                    Object rejectedValue = error.getRejectedValue();
+                    if (rejectedValue == null) return false;
+                    
+                    String value = rejectedValue.toString();
+                    
+                    // Check for SQL injection patterns
+                    if (value.contains("'") || 
+                        value.contains("--") || 
+                        value.toLowerCase().contains("union") ||
+                        value.toLowerCase().contains("select") ||
+                        value.toLowerCase().contains("drop")) {
+                        
+                        log.warn("Suspicious input detected in field {}: {}", 
+                                error.getField(), value);
+                        return true;
+                    }
+                    
+                    // Check for XSS patterns
+                    if (value.contains("<script") || 
+                        value.contains("<iframe") ||
+                        value.contains("javascript:")) {
+                        
+                        log.warn("XSS attempt detected in field {}: {}", 
+                                error.getField(), value);
+                        return true;
+                    }
+                    
+                    return false;
+                });
+    }
 }

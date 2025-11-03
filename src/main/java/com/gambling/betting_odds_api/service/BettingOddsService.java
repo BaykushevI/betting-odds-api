@@ -4,13 +4,14 @@ package com.gambling.betting_odds_api.service;
 // INTERNAL PROJECT IMPORTS
 // ═══════════════════════════════════════════════════════════════════════════
 // DTOs - Data Transfer Objects for API layer
-import com.gambling.betting_odds_api.dto.CreateOddsRequest;  // Request DTO for creating odds
-import com.gambling.betting_odds_api.dto.OddsResponse;       // Response DTO for odds data
-import com.gambling.betting_odds_api.dto.PageResponse;       // Generic paginated response wrapper
-import com.gambling.betting_odds_api.dto.UpdateOddsRequest;  // Request DTO for updating odds
+import com.gambling.betting_odds_api.dto.CreateOddsRequest;
+import com.gambling.betting_odds_api.dto.OddsResponse;
+import com.gambling.betting_odds_api.dto.PageResponse;
+import com.gambling.betting_odds_api.dto.UpdateOddsRequest;
 
 // Exceptions - Custom error handling
-import com.gambling.betting_odds_api.exception.ResourceNotFoundException; // 404 Not Found exception
+import com.gambling.betting_odds_api.exception.ResourceNotFoundException;
+import com.gambling.betting_odds_api.exception.InvalidOddsException;
 
 // Logging - Professional logging system
 import com.gambling.betting_odds_api.logging.AuditLogger;
@@ -18,401 +19,650 @@ import com.gambling.betting_odds_api.logging.PerformanceLogger;
 import com.gambling.betting_odds_api.logging.SecurityLogger;
 
 // Mapper - DTO ↔ Entity conversion
-import com.gambling.betting_odds_api.mapper.OddsMapper; // Converts between DTOs and Entities
+import com.gambling.betting_odds_api.mapper.OddsMapper;
 
 // Model - Database entity
-import com.gambling.betting_odds_api.model.BettingOdds; // JPA entity representing betting_odds table
+import com.gambling.betting_odds_api.model.BettingOdds;
 
 // Repository - Database access layer
-import com.gambling.betting_odds_api.repository.BettingOddsRepository; // Spring Data JPA repository
+import com.gambling.betting_odds_api.repository.BettingOddsRepository;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // LOMBOK - Reduces boilerplate code
 // ═══════════════════════════════════════════════════════════════════════════
-import lombok.RequiredArgsConstructor; // Auto-generates constructor for final fields
-import lombok.extern.slf4j.Slf4j;      // Auto-generates Logger instance (log variable)
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SPRING DATA - Database operations with pagination
 // ═══════════════════════════════════════════════════════════════════════════
-import org.springframework.data.domain.Page;     // Wrapper for paginated query results
-import org.springframework.data.domain.Pageable; // Pagination and sorting parameters
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SPRING FRAMEWORK - Core functionality
 // ═══════════════════════════════════════════════════════════════════════════
-import org.springframework.stereotype.Service;                  // Marks class as service component
-import org.springframework.transaction.annotation.Transactional; // Database transaction management
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // JAVA STANDARD LIBRARY - Core Java classes
 // ═══════════════════════════════════════════════════════════════════════════
-import java.time.LocalDateTime; // Date/time operations (for upcoming matches query)
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 /**
- * BettingOddsService - Business logic for betting odds operations.
+ * BettingOddsService - Business logic with comprehensive logging.
  * 
- * ═══════════════════════════════════════════════════════════════════════════
- * SERVICE LAYER RESPONSIBILITIES:
- * ═══════════════════════════════════════════════════════════════════════════
- * 
- * 1. BUSINESS LOGIC
- *    - Contains ALL business rules and calculations
- *    - Example: Bookmaker margin calculation
- *    - Example: Validation that odds are within acceptable range
- * 
- * 2. TRANSACTION MANAGEMENT
- *    - @Transactional ensures ACID properties
- *    - If operation fails, database changes are rolled back
- *    - Critical for data consistency
- * 
- * 3. ORCHESTRATION
- *    - Coordinates multiple repository calls if needed
- *    - Manages data flow between layers
- *    - Converts entities to DTOs (via mapper)
- * 
- * 4. LOGGING
- *    - Detailed logging of operations
- *    - Performance tracking
- *    - Audit trail for compliance
- * 
- * ═══════════════════════════════════════════════════════════════════════════
- * WHY SERVICE LAYER EXISTS:
- * ═══════════════════════════════════════════════════════════════════════════
- * 
- * - SEPARATION OF CONCERNS: Controller handles HTTP, Service handles business
- * - REUSABILITY: Same service can be called from multiple controllers
- * - TESTABILITY: Easy to unit test business logic without HTTP layer
- * - TRANSACTION BOUNDARIES: Define where transactions start/end
- * 
- * ═══════════════════════════════════════════════════════════════════════════
+ * Logging Strategy:
+ * - Standard logging (log.*) for development/debugging
+ * - AuditLogger for business operations tracking (compliance)
+ * - PerformanceLogger for execution time monitoring (optimization)
+ * - SecurityLogger for fraud detection (security)
  */
-@Service                  // Spring component - auto-discovered and registered as bean
-@RequiredArgsConstructor  // Lombok: generates constructor for final fields (dependency injection)
-@Slf4j                    // Lombok: generates Logger log = LoggerFactory.getLogger(BettingOddsService.class)
+@Service
+@RequiredArgsConstructor
+@Slf4j
 public class BettingOddsService {
     
     // ═══════════════════════════════════════════════════════════════════════
-    // DEPENDENCIES - Injected via constructor (thanks to @RequiredArgsConstructor)
+    // DEPENDENCIES - Injected via constructor
     // ═══════════════════════════════════════════════════════════════════════
     
-    private final BettingOddsRepository repository; // Database access
-    private final OddsMapper mapper;                 // DTO ↔ Entity conversion
+    private final BettingOddsRepository repository;
+    private final OddsMapper mapper;
     
-    private final AuditLogger auditLogger;           // Audit logging
-    private final PerformanceLogger performanceLogger; // Performance logging
-    private final SecurityLogger securityLogger;     // Security logging
-
-    // Future: Logger classes will be added here in next commits
-    // private final AuditLogger auditLogger;
-    // private final PerformanceLogger performanceLogger;
-    // private final SecurityLogger securityLogger;
+    // Specialized loggers for different concerns
+    private final AuditLogger auditLogger;
+    private final PerformanceLogger performanceLogger;
+    private final SecurityLogger securityLogger;
     
     // ═══════════════════════════════════════════════════════════════════════
     // CREATE OPERATIONS
     // ═══════════════════════════════════════════════════════════════════════
     
-    /**
-     * Create new betting odds.
-     * 
-     * Transaction Flow:
-     * 1. Convert DTO → Entity (via mapper)
-     * 2. Save to database
-     * 3. Convert saved Entity → Response DTO
-     * 4. Return to controller
-     * 
-     * @Transactional ensures:
-     * - If save fails, no partial data is committed
-     * - Automatic rollback on exceptions
-     * - Database connection is managed automatically
-     * 
-     * @param request CreateOddsRequest DTO with odds data
-     * @return OddsResponse DTO with saved data (including generated ID)
-     */
     @Transactional
     public OddsResponse createOdds(CreateOddsRequest request) {
-        
         long startTime = PerformanceLogger.startTiming();
-
-        log.infor("createing new betting odds for match: {} vs {}",
+        
+        log.info("Creating new betting odds for {} vs {}",
                 request.getHomeTeam(), request.getAwayTeam());
-
         log.debug("Full odds details: sport={}, homeOdds={}, drawOdds={}, awayOdds={}, matchDate={}",
                 request.getSport(), request.getHomeOdds(),
-                request.getDrawOdds(), request.getAwayOdds(),
-                request.getMatchDate());
-
-        try{
+                request.getDrawOdds(), request.getAwayOdds(), request.getMatchDate());
+        
+        try {
+            // Security validation: Check for suspicious odds values
             validateOddsForSecurity(request);
-
+            
+            // Convert DTO to Entity
             BettingOdds odds = mapper.toEntity(request);
+            
+            // Save to database
             BettingOdds saved = repository.save(odds);
-            log.info("Successfully created betting odds with ID: {}", saved.getId());
-
+            log.info("Successfully created odds with ID: {}", saved.getId());
+            
+            // Audit log - track business operation
             auditLogger.logOddsCreated(
                 saved.getId(), 
-                saved.getSport(),
-                saved.getHomeTeam(),
+                saved.getSport(), 
+                saved.getHomeTeam(), 
                 saved.getAwayTeam()
             );
-
+            
+            // Performance log - track execution time
             long duration = PerformanceLogger.endTiming(startTime);
             performanceLogger.logDatabaseQuery("CREATE_ODDS", duration);
-
+            
             return mapper.toResponse(saved);
-        } catch (Exception ex){
-            log.error("Error creating betting odds: {}", ex.getMessage());
-            throw ex;
+            
+        } catch (Exception e) {
+            log.error("Failed to create odds for {} vs {}: {}", 
+                    request.getHomeTeam(), request.getAwayTeam(), e.getMessage(), e);
+            throw e;
         }
     }
     
     // ═══════════════════════════════════════════════════════════════════════
-    // READ OPERATIONS (Queries)
+    // READ OPERATIONS
     // ═══════════════════════════════════════════════════════════════════════
     
-    /**
-     * Get all odds with optional pagination.
-     * 
-     * Read-only operation - no @Transactional needed.
-     * Spring Data JPA handles query execution and pagination automatically.
-     * 
-     * @param pageable Pagination parameters (page, size, sort)
-     * @return PageResponse containing list of odds and pagination metadata
-     */
     public PageResponse<OddsResponse> getAllOdds(Pageable pageable) {
-        // Query database (Spring Data JPA generates SQL automatically)
-        Page<BettingOdds> page = repository.findAll(pageable);
+        long startTime = PerformanceLogger.startTiming();
         
-        // Convert Page<Entity> to Page<DTO>
-        // .map() applies mapper.toResponse() to each entity in the page
-        Page<OddsResponse> responsePage = page.map(mapper::toResponse);
+        log.debug("Fetching all odds with pagination: page={}, size={}", 
+                pageable.getPageNumber(), pageable.getPageSize());
         
-        // Wrap in our custom PageResponse (adds consistent structure)
-        return PageResponse.of(responsePage);
+        try {
+            Page<BettingOdds> page = repository.findAll(pageable);
+            Page<OddsResponse> responsePage = page.map(mapper::toResponse);
+            
+            log.info("Retrieved {} odds (page {} of {})", 
+                    page.getNumberOfElements(), 
+                    page.getNumber() + 1, 
+                    page.getTotalPages());
+            
+            // Audit log for bulk queries
+            auditLogger.logBulkQuery(
+                "/api/odds", 
+                page.getNumberOfElements(), 
+                "none"
+            );
+            
+            // Performance log for pagination
+            long duration = PerformanceLogger.endTiming(startTime);
+            performanceLogger.logPagination(
+                "/api/odds", 
+                pageable.getPageNumber(), 
+                pageable.getPageSize(), 
+                (int) page.getTotalElements(), 
+                duration
+            );
+            
+            return PageResponse.of(responsePage);
+            
+        } catch (Exception e) {
+            log.error("Failed to fetch all odds: {}", e.getMessage(), e);
+            throw e;
+        }
     }
     
-    /**
-     * Get only active odds with pagination.
-     * 
-     * @param pageable Pagination parameters
-     * @return PageResponse containing only active odds
-     */
     public PageResponse<OddsResponse> getActiveOdds(Pageable pageable) {
-        Page<BettingOdds> page = repository.findByActiveTrue(pageable);
-        Page<OddsResponse> responsePage = page.map(mapper::toResponse);
-        return PageResponse.of(responsePage);
-    }
-    
-    /**
-     * Get odds by ID.
-     * 
-     * Single record - no pagination needed.
-     * Throws ResourceNotFoundException if not found (handled by GlobalExceptionHandler).
-     * 
-     * @param id Unique identifier
-     * @return OddsResponse DTO
-     * @throws ResourceNotFoundException if odds not found
-     */
-    public OddsResponse getOddsById(Long id) {
-        // findById returns Optional<BettingOdds>
-        // orElseThrow() returns entity if present, or throws exception if empty
-        BettingOdds odds = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Betting Odds", id));
+        long startTime = PerformanceLogger.startTiming();
         
-        return mapper.toResponse(odds);
+        log.debug("Fetching active odds only");
+        
+        try {
+            Page<BettingOdds> page = repository.findByActiveTrue(pageable);
+            Page<OddsResponse> responsePage = page.map(mapper::toResponse);
+            
+            log.info("Retrieved {} active odds", page.getNumberOfElements());
+            
+            auditLogger.logBulkQuery(
+                "/api/odds/active", 
+                page.getNumberOfElements(), 
+                "active=true"
+            );
+            
+            long duration = PerformanceLogger.endTiming(startTime);
+            performanceLogger.logPagination(
+                "/api/odds/active", 
+                pageable.getPageNumber(), 
+                pageable.getPageSize(), 
+                (int) page.getTotalElements(), 
+                duration
+            );
+            
+            return PageResponse.of(responsePage);
+            
+        } catch (Exception e) {
+            log.error("Failed to fetch active odds: {}", e.getMessage(), e);
+            throw e;
+        }
     }
     
-    /**
-     * Get odds by sport (only active) with pagination.
-     * 
-     * @param sport Sport name (e.g., "Football", "Basketball")
-     * @param pageable Pagination parameters
-     * @return PageResponse containing odds for specified sport
-     */
+    public OddsResponse getOddsById(Long id) {
+        long startTime = PerformanceLogger.startTiming();
+        
+        log.debug("Fetching odds by ID: {}", id);
+        
+        try {
+            BettingOdds odds = repository.findById(id)
+                    .orElseThrow(() -> {
+                        log.warn("Odds not found with ID: {}", id);
+                        return new ResourceNotFoundException("Betting Odds", id);
+                    });
+            
+            log.info("Successfully retrieved odds: {} vs {}", 
+                    odds.getHomeTeam(), odds.getAwayTeam());
+            
+            // Audit log
+            auditLogger.logOddsViewed(id, "/api/odds/" + id);
+            
+            // Performance log
+            long duration = PerformanceLogger.endTiming(startTime);
+            performanceLogger.logDatabaseQuery("GET_ODDS_BY_ID", duration);
+            
+            return mapper.toResponse(odds);
+            
+        } catch (Exception e) {
+            log.error("Failed to fetch odds by ID {}: {}", id, e.getMessage(), e);
+            throw e;
+        }
+    }
+    
     public PageResponse<OddsResponse> getOddsBySport(String sport, Pageable pageable) {
-        Page<BettingOdds> page = repository.findBySportAndActiveTrue(sport, pageable);
-        Page<OddsResponse> responsePage = page.map(mapper::toResponse);
-        return PageResponse.of(responsePage);
+        long startTime = PerformanceLogger.startTiming();
+        
+        log.debug("Fetching odds for sport: {}", sport);
+        
+        try {
+            Page<BettingOdds> page = repository.findBySportAndActiveTrue(sport, pageable);
+            Page<OddsResponse> responsePage = page.map(mapper::toResponse);
+            
+            log.info("Retrieved {} odds for sport: {}", page.getNumberOfElements(), sport);
+            
+            auditLogger.logBulkQuery(
+                "/api/odds/sport/" + sport, 
+                page.getNumberOfElements(), 
+                "sport=" + sport
+            );
+            
+            long duration = PerformanceLogger.endTiming(startTime);
+            performanceLogger.logPagination(
+                "/api/odds/sport/" + sport, 
+                pageable.getPageNumber(), 
+                pageable.getPageSize(), 
+                (int) page.getTotalElements(), 
+                duration
+            );
+            
+            return PageResponse.of(responsePage);
+            
+        } catch (Exception e) {
+            log.error("Failed to fetch odds for sport {}: {}", sport, e.getMessage(), e);
+            throw e;
+        }
     }
     
-    /**
-     * Get upcoming matches (future dates only) with pagination.
-     * 
-     * Uses custom query in repository:
-     * @Query("SELECT o FROM BettingOdds o WHERE o.matchDate > :currentDate")
-     * 
-     * @param pageable Pagination parameters
-     * @return PageResponse containing upcoming matches
-     */
     public PageResponse<OddsResponse> getUpcomingMatches(Pageable pageable) {
-        // Pass current timestamp to query
-        Page<BettingOdds> page = repository.findUpcomingMatches(
-                LocalDateTime.now(), pageable);
-        Page<OddsResponse> responsePage = page.map(mapper::toResponse);
-        return PageResponse.of(responsePage);
+        long startTime = PerformanceLogger.startTiming();
+        
+        log.debug("Fetching upcoming matches");
+        
+        try {
+            Page<BettingOdds> page = repository.findUpcomingMatches(
+                    LocalDateTime.now(), pageable);
+            Page<OddsResponse> responsePage = page.map(mapper::toResponse);
+            
+            log.info("Retrieved {} upcoming matches", page.getNumberOfElements());
+            
+            auditLogger.logBulkQuery(
+                "/api/odds/upcoming", 
+                page.getNumberOfElements(), 
+                "matchDate>now"
+            );
+            
+            long duration = PerformanceLogger.endTiming(startTime);
+            performanceLogger.logPagination(
+                "/api/odds/upcoming", 
+                pageable.getPageNumber(), 
+                pageable.getPageSize(), 
+                (int) page.getTotalElements(), 
+                duration
+            );
+            
+            return PageResponse.of(responsePage);
+            
+        } catch (Exception e) {
+            log.error("Failed to fetch upcoming matches: {}", e.getMessage(), e);
+            throw e;
+        }
     }
     
-    /**
-     * Get matches for specific team (home or away) with pagination.
-     * 
-     * Uses custom query in repository:
-     * @Query("SELECT o FROM BettingOdds o WHERE o.homeTeam = :teamName OR o.awayTeam = :teamName")
-     * 
-     * @param teamName Team name to search for
-     * @param pageable Pagination parameters
-     * @return PageResponse containing matches for team
-     */
     public PageResponse<OddsResponse> getMatchesForTeam(String teamName, Pageable pageable) {
-        Page<BettingOdds> page = repository.findByTeam(teamName, pageable);
-        Page<OddsResponse> responsePage = page.map(mapper::toResponse);
-        return PageResponse.of(responsePage);
+        long startTime = PerformanceLogger.startTiming();
+        
+        log.debug("Fetching matches for team: {}", teamName);
+        
+        try {
+            Page<BettingOdds> page = repository.findByTeam(teamName, pageable);
+            Page<OddsResponse> responsePage = page.map(mapper::toResponse);
+            
+            log.info("Retrieved {} matches for team: {}", page.getNumberOfElements(), teamName);
+            
+            auditLogger.logBulkQuery(
+                "/api/odds/team/" + teamName, 
+                page.getNumberOfElements(), 
+                "team=" + teamName
+            );
+            
+            long duration = PerformanceLogger.endTiming(startTime);
+            performanceLogger.logPagination(
+                "/api/odds/team/" + teamName, 
+                pageable.getPageNumber(), 
+                pageable.getPageSize(), 
+                (int) page.getTotalElements(), 
+                duration
+            );
+            
+            return PageResponse.of(responsePage);
+            
+        } catch (Exception e) {
+            log.error("Failed to fetch matches for team {}: {}", teamName, e.getMessage(), e);
+            throw e;
+        }
     }
     
     // ═══════════════════════════════════════════════════════════════════════
     // UPDATE OPERATIONS
     // ═══════════════════════════════════════════════════════════════════════
     
-    /**
-     * Update existing odds.
-     * 
-     * Transaction Flow:
-     * 1. Find existing entity (or throw exception)
-     * 2. Update fields from DTO (via mapper)
-     * 3. Save updated entity (JPA updates updatedAt timestamp automatically)
-     * 4. Return updated DTO
-     * 
-     * @Transactional ensures atomic operation.
-     * 
-     * @param id Unique identifier of odds to update
-     * @param request UpdateOddsRequest DTO with new values
-     * @return OddsResponse DTO with updated data
-     * @throws ResourceNotFoundException if odds not found
-     */
     @Transactional
     public OddsResponse updateOdds(Long id, UpdateOddsRequest request) {
+        long startTime = PerformanceLogger.startTiming();
+        
         log.info("Updating odds with ID: {}", id);
 
-        // Find existing entity (or throw exception)
-        BettingOdds existing = repository.findById(id)
-                .orElseThrow(() -> {
-                    log.error("Odds not found with ID: {}", id);
-                    return new ResourceNotFoundException("Betting Odds", id);
-                });
-        
-        // Log what we found
-        log.debug("Found existing odds: {} vs {}", 
-                existing.getHomeTeam(), existing.getAwayTeam());
-        
-        // Log what we're changing to
-        log.debug("Updating with new values: homeOdds={}, drawOdds={}, awayOdds={}",
-                request.getHomeOdds(), request.getDrawOdds(), request.getAwayOdds());
-        
-        // Update entity from DTO (mapper handles field mapping)
-        mapper.updateEntityFromDto(existing, request);
-        
-        // Save updated entity
-        // JPA's @PreUpdate in entity automatically sets updatedAt timestamp
-        BettingOdds updated = repository.save(existing);
-        
-        log.info("Successfully updated odds with ID: {}", id);
-
-        return mapper.toResponse(updated);
+        try {
+            BettingOdds existing = repository.findById(id)
+                    .orElseThrow(() -> {
+                        log.error("Odds not found with ID: {}", id);
+                        return new ResourceNotFoundException("Betting Odds", id);
+                    });
+            
+            log.debug("Found existing odds: {} vs {}", 
+                    existing.getHomeTeam(), existing.getAwayTeam());
+            
+            // Security check: Detect suspicious odds changes
+            detectSuspiciousOddsChange(existing, request);
+            
+            // Track changes for audit
+            String changes = buildChangeLog(existing, request);
+            
+            log.debug("Updating with new values: homeOdds={}, drawOdds={}, awayOdds={}",
+                    request.getHomeOdds(), request.getDrawOdds(), request.getAwayOdds());
+            
+            // Update entity from DTO
+            mapper.updateEntityFromDto(existing, request);
+            
+            // Save
+            BettingOdds updated = repository.save(existing);
+            log.info("Successfully updated odds with ID: {}", id);
+            
+            // Audit log
+            auditLogger.logOddsUpdated(
+                id, 
+                updated.getHomeTeam(), 
+                updated.getAwayTeam(), 
+                changes
+            );
+            
+            // Performance log
+            long duration = PerformanceLogger.endTiming(startTime);
+            performanceLogger.logDatabaseQuery("UPDATE_ODDS", duration);
+            
+            return mapper.toResponse(updated);
+            
+        } catch (Exception e) {
+            log.error("Failed to update odds with ID {}: {}", id, e.getMessage(), e);
+            throw e;
+        }
     }
     
-    /**
-     * Deactivate odds (soft delete).
-     * 
-     * Sets active = false instead of deleting from database.
-     * Preserves data for audit trail and historical analysis.
-     * 
-     * @Transactional ensures atomic operation.
-     * 
-     * @param id Unique identifier of odds to deactivate
-     * @throws ResourceNotFoundException if odds not found
-     */
     @Transactional
     public void deactivateOdds(Long id) {
-        // Find existing entity
-        BettingOdds odds = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Betting Odds", id));
+        long startTime = PerformanceLogger.startTiming();
         
-        // Set to inactive
-        odds.setActive(false);
+        log.warn("Deactivating odds with ID: {}", id);
         
-        // Save (triggers @PreUpdate, sets updatedAt timestamp)
-        repository.save(odds);
+        try {
+            BettingOdds odds = repository.findById(id)
+                    .orElseThrow(() -> {
+                        log.error("Cannot deactivate - odds not found with ID: {}", id);
+                        return new ResourceNotFoundException("Betting Odds", id);
+                    });
+            
+            odds.setActive(false);
+            repository.save(odds);
+            
+            log.info("Successfully deactivated odds with ID: {}", id);
+            
+            // Audit log
+            auditLogger.logOddsDeactivated(
+                id, 
+                odds.getHomeTeam(), 
+                odds.getAwayTeam()
+            );
+            
+            // Performance log
+            long duration = PerformanceLogger.endTiming(startTime);
+            performanceLogger.logDatabaseQuery("DEACTIVATE_ODDS", duration);
+            
+        } catch (Exception e) {
+            log.error("Failed to deactivate odds with ID {}: {}", id, e.getMessage(), e);
+            throw e;
+        }
     }
     
     // ═══════════════════════════════════════════════════════════════════════
     // DELETE OPERATIONS
     // ═══════════════════════════════════════════════════════════════════════
     
-    /**
-     * Delete odds permanently (hard delete).
-     * 
-     * ⚠️ WARNING: This is PERMANENT and IRREVERSIBLE!
-     * - No audit trail after deletion
-     * - Cannot recover data
-     * - Violates gambling industry best practices
-     * 
-     * Should be RARE in production. Prefer soft delete (deactivate).
-     * 
-     * @Transactional ensures atomic operation.
-     * 
-     * @param id Unique identifier of odds to delete
-     * @throws ResourceNotFoundException if odds not found
-     */
     @Transactional
     public void deleteOdds(Long id) {
-        // WARN level because hard delete is serious
+        long startTime = PerformanceLogger.startTiming();
+        
         log.warn("Attempting to delete odds with ID: {} (HARD DELETE)", id);
-
-        // Check if exists (throws exception if not)
-        if (!repository.existsById(id)) {
-            log.error("Cannot delete - odds not found with ID: {}", id);
-            throw new ResourceNotFoundException("Betting Odds", id);
+        
+        try {
+            BettingOdds odds = repository.findById(id)
+                    .orElseThrow(() -> {
+                        log.error("Cannot delete - odds not found with ID: {}", id);
+                        return new ResourceNotFoundException("Betting Odds", id);
+                    });
+            
+            String homeTeam = odds.getHomeTeam();
+            String awayTeam = odds.getAwayTeam();
+            
+            repository.deleteById(id);
+            
+            log.info("Successfully deleted odds with ID: {}", id);
+            
+            // Audit log (CRITICAL - hard delete is permanent!)
+            auditLogger.logOddsDeleted(id, homeTeam, awayTeam);
+            
+            // Performance log
+            long duration = PerformanceLogger.endTiming(startTime);
+            performanceLogger.logDatabaseQuery("DELETE_ODDS", duration);
+            
+        } catch (Exception e) {
+            log.error("Failed to delete odds with ID {}: {}", id, e.getMessage(), e);
+            throw e;
         }
-        
-        // Permanently delete from database
-        repository.deleteById(id);
-        
-        log.info("Successfully deleted odds with ID: {}", id);
     }
     
     // ═══════════════════════════════════════════════════════════════════════
-    // BUSINESS LOGIC - Calculations
+    // BUSINESS LOGIC
+    // ═══════════════════════════════════════════════════════════════════════
+    
+    public OddsResponse getOddsWithMargin(Long id) {
+        long startTime = PerformanceLogger.startTiming();
+        
+        log.debug("Calculating margin for odds ID: {}", id);
+        
+        try {
+            BettingOdds odds = repository.findById(id)
+                    .orElseThrow(() -> {
+                        log.warn("Cannot calculate margin - odds not found with ID: {}", id);
+                        return new ResourceNotFoundException("Betting Odds", id);
+                    });
+            
+            OddsResponse response = mapper.toResponseWithMargin(odds);
+            
+            log.info("Calculated margin for {} vs {}: {}%", 
+                    odds.getHomeTeam(), odds.getAwayTeam(), response.getBookmakerMargin());
+            
+            // Audit log
+            auditLogger.logMarginCalculation(
+                id, 
+                response.getBookmakerMargin(), 
+                odds.getHomeTeam(), 
+                odds.getAwayTeam()
+            );
+            
+            // Security check: Detect anomalous margins
+            if (response.getBookmakerMargin() < 1.0 || response.getBookmakerMargin() > 20.0) {
+                securityLogger.logAnomalousMargin(
+                    id, 
+                    response.getBookmakerMargin(), 
+                    odds.getHomeTeam(), 
+                    odds.getAwayTeam()
+                );
+            }
+            
+            // Performance log
+            long duration = PerformanceLogger.endTiming(startTime);
+            performanceLogger.logCalculation("BOOKMAKER_MARGIN", duration);
+            
+            return response;
+            
+        } catch (Exception e) {
+            log.error("Failed to calculate margin for odds ID {}: {}", id, e.getMessage(), e);
+            throw e;
+        }
+    }
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // SECURITY & VALIDATION HELPERS
     // ═══════════════════════════════════════════════════════════════════════
     
     /**
-     * Get odds with calculated bookmaker margin.
-     * 
-     * Bookmaker Margin Formula:
-     * 1. Calculate implied probabilities:
-     *    - Home: 1 / homeOdds
-     *    - Draw: 1 / drawOdds
-     *    - Away: 1 / awayOdds
-     * 
-     * 2. Sum probabilities (will be > 100% due to margin)
-     * 
-     * 3. Margin = Sum - 100%
-     * 
-     * Example:
-     * homeOdds=2.10, drawOdds=3.40, awayOdds=3.60
-     * impliedHome = 1/2.10 = 47.6%
-     * impliedDraw = 1/3.40 = 29.4%
-     * impliedAway = 1/3.60 = 27.8%
-     * Sum = 104.8%
-     * Margin = 4.8% (bookmaker's profit)
-     * 
-     * @param id Unique identifier
-     * @return OddsResponse with calculated margin fields populated
-     * @throws ResourceNotFoundException if odds not found
+     * Validate odds for security issues.
      */
-    public OddsResponse getOddsWithMargin(Long id) {
-        BettingOdds odds = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Betting Odds", id));
+    private void validateOddsForSecurity(CreateOddsRequest request) {
+        // Check for SQL injection patterns in ALL string fields
+        checkForSqlInjection("sport", request.getSport());
+        checkForSqlInjection("homeTeam", request.getHomeTeam());
+        checkForSqlInjection("awayTeam", request.getAwayTeam());
         
-        // Mapper handles calculation logic
-        return mapper.toResponseWithMargin(odds);
+        // Check for suspiciously low odds (< 1.01)
+        if (request.getHomeOdds().compareTo(BigDecimal.valueOf(1.01)) < 0 ||
+            request.getDrawOdds().compareTo(BigDecimal.valueOf(1.01)) < 0 ||
+            request.getAwayOdds().compareTo(BigDecimal.valueOf(1.01)) < 0) {
+            
+            securityLogger.logInvalidOdds(
+                request.getHomeTeam(),
+                request.getAwayTeam(),
+                request.getHomeOdds().doubleValue(),
+                request.getDrawOdds().doubleValue(),
+                request.getAwayOdds().doubleValue(),
+                "Odds below minimum threshold (1.01)"
+            );
+        }
+        
+        // Check for suspiciously high odds (> 1000)
+        if (request.getHomeOdds().compareTo(BigDecimal.valueOf(1000)) > 0 ||
+            request.getDrawOdds().compareTo(BigDecimal.valueOf(1000)) > 0 ||
+            request.getAwayOdds().compareTo(BigDecimal.valueOf(1000)) > 0) {
+            
+            securityLogger.logInvalidOdds(
+                request.getHomeTeam(),
+                request.getAwayTeam(),
+                request.getHomeOdds().doubleValue(),
+                request.getDrawOdds().doubleValue(),
+                request.getAwayOdds().doubleValue(),
+                "Odds above maximum threshold (1000)"
+            );
+        }
+    }
+    
+    /**
+     * Check single field for SQL injection patterns.
+     * 
+     * WHY BLOCK SQL INJECTION:
+     * Even though we use JPA/Hibernate with prepared statements (which protect
+     * against SQL injection at database level), we still block suspicious input
+     * because:
+     * 
+     * 1. DEFENSE IN DEPTH - Multiple layers of protection
+     * 2. DATA INTEGRITY - Don't want garbage like "SQL' OR '1'='1" in database
+     * 3. AUDIT TRAIL - Show we actively prevent attacks (regulatory requirement)
+     * 4. BUSINESS LOGIC - Field values might be used elsewhere (reports, emails)
+     * 
+     * HOW IT WORKS:
+     * - Check for common SQL injection patterns
+     * - Log the attempt in security.log
+     * - Throw InvalidOddsException to reject the request
+     * - Client gets 400 Bad Request with error message
+     */
+    private void checkForSqlInjection(String fieldName, String value) {
+        if (value == null) return;
+        
+        String lower = value.toLowerCase();
+        
+        // Check for SQL injection patterns
+        if (value.contains("'") || 
+            value.contains("--") ||
+            lower.contains("union") ||
+            lower.contains("select") ||
+            lower.contains("drop") ||
+            lower.contains("insert") ||
+            lower.contains("delete") ||
+            value.contains(";")) {
+            
+            // Log the attempt
+            log.warn("SQL injection attempt detected in field {}: {}", fieldName, value);
+            securityLogger.logSqlInjectionAttempt("/api/odds", value);
+            
+            // BLOCK THE REQUEST - throw exception
+            throw new InvalidOddsException(
+                String.format("Suspicious input detected in %s field. Request rejected for security reasons.", fieldName)
+            );
+        }
+        
+        // Check for XSS patterns
+        if (lower.contains("<script") ||
+            lower.contains("<iframe") ||
+            lower.contains("javascript:") ||
+            lower.contains("onerror=")) {
+            
+            // Log the attempt
+            log.warn("XSS attempt detected in field {}: {}", fieldName, value);
+            securityLogger.logXssAttempt("/api/odds", value);
+            
+            // BLOCK THE REQUEST - throw exception
+            throw new InvalidOddsException(
+                String.format("Suspicious input detected in %s field. Request rejected for security reasons.", fieldName)
+            );
+        }
+    }
+    
+    /**
+     * Detect suspicious odds changes.
+     */
+    private void detectSuspiciousOddsChange(BettingOdds existing, UpdateOddsRequest request) {
+        // Check if odds changed by more than 50%
+        double homeChange = Math.abs(request.getHomeOdds().doubleValue() - 
+                                     existing.getHomeOdds().doubleValue()) / 
+                                     existing.getHomeOdds().doubleValue();
+        
+        if (homeChange > 0.5) {
+            securityLogger.logSuspiciousOddsChange(
+                existing.getId(),
+                existing.getHomeOdds().toString(),
+                request.getHomeOdds().toString(),
+                "Home odds changed by more than 50%"
+            );
+        }
+    }
+    
+    /**
+     * Build change log for audit.
+     */
+    private String buildChangeLog(BettingOdds existing, UpdateOddsRequest request) {
+        StringBuilder changes = new StringBuilder();
+        
+        if (!existing.getHomeOdds().equals(request.getHomeOdds())) {
+            changes.append(String.format("homeOdds:%s->%s ", 
+                    existing.getHomeOdds(), request.getHomeOdds()));
+        }
+        
+        if (!existing.getDrawOdds().equals(request.getDrawOdds())) {
+            changes.append(String.format("drawOdds:%s->%s ", 
+                    existing.getDrawOdds(), request.getDrawOdds()));
+        }
+        
+        if (!existing.getAwayOdds().equals(request.getAwayOdds())) {
+            changes.append(String.format("awayOdds:%s->%s ", 
+                    existing.getAwayOdds(), request.getAwayOdds()));
+        }
+        
+        if (!existing.getActive().equals(request.getActive())) {
+            changes.append(String.format("active:%s->%s ", 
+                    existing.getActive(), request.getActive()));
+        }
+        
+        return changes.toString().trim();
     }
 }
