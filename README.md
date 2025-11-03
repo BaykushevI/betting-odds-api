@@ -7,7 +7,7 @@ A production-ready RESTful API for managing betting odds for sports matches, bui
 ```
 Phase 1: Core CRUD API              ✅ COMPLETE
 Phase 2.1: Production Logging       ✅ COMPLETE
-Phase 2.2: Unit & Integration Tests 🔄 IN PROGRESS (Day 2 DONE: 6/45 tests)
+Phase 2.2: Unit & Integration Tests 🔄 IN PROGRESS (Day 3 DONE: 11/45 tests)
 Phase 3: Security & Authentication  📋 PLANNED
 Phase 4: Performance & Reliability  📋 PLANNED  
 Phase 5: Microservices & Gateway    🚀 FUTURE
@@ -289,11 +289,11 @@ logs/
 📅 **Week 1: Service Layer Tests (Days 1-7)**
 - [x] Day 1: Test setup + First test (createOdds - happy path) ✅ **DONE**
 - [x] Day 2: READ tests (getById, getAll, getBySport) ✅ **DONE**
-- [ ] Day 3: UPDATE tests (updateOdds, deactivateOdds)
-- [ ] Day 4: DELETE tests + Edge cases
-- [ ] Day 5: Exception tests (ResourceNotFoundException, InvalidOddsException)
-- [ ] Day 6: Business logic tests (margin calculation, security validation)
-- [ ] Day 7: Service layer review + Git commit
+- [x] Day 3: UPDATE and DELETE tests (updateOdds, deactivateOdds, deleteOdds) ✅ **DONE**
+- [ ] Day 4: Business logic tests (margin calculation, security validation)
+- [ ] Day 5: Edge cases and additional scenarios
+- [ ] Day 6: Service layer completion and review
+- [ ] Day 7: Service layer Git commit + Coverage report
 
 📅 **Week 2: Mapper & Repository Tests (Days 8-14)**
 - [ ] Day 8-9: Mapper tests (DTO ↔ Entity conversion)
@@ -309,11 +309,11 @@ logs/
 
 | Component | Tests Written | Coverage | Status |
 |-----------|--------------|----------|--------|
-| **BettingOddsService** | 6/15 | ~40% | 🔄 In Progress |
+| **BettingOddsService** | 11/15 | ~73% | 🔄 In Progress |
 | OddsMapper | 0/8 | 0% | ⏳ Pending |
 | BettingOddsRepository | 0/10 | 0% | ⏳ Pending |
 | BettingOddsController | 0/12 | 0% | ⏳ Pending |
-| **TOTAL** | **6/45** | **~13%** | 🎯 **Target: 80%+** |
+| **TOTAL** | **11/45** | **~24%** | 🎯 **Target: 80%+** |
 
 **What We're Learning:**
 - ✅ JUnit 5 basics (test structure, assertions)
