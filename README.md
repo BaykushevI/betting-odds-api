@@ -6,8 +6,8 @@ A production-ready RESTful API for managing betting odds for sports matches, bui
 
 ```
 Phase 1: Core CRUD API              ✅ COMPLETE
-Phase 2: Production Features        🔄 IN PROGRESS (Logging)
-Phase 3: Security & Testing         📋 PLANNED
+Phase 2: Production Features        ✅ COMPLETE (Logging System finished!)
+Phase 3: Security & Testing         📋 NEXT (Unit & Integration Tests)
 Phase 4: Performance & Reliability  📋 PLANNED  
 Phase 5: Microservices & Gateway    🚀 FUTURE
 Phase 6: Cloud Deployment           ☁️ ADVANCED
@@ -17,13 +17,14 @@ Phase 6: Cloud Deployment           ☁️ ADVANCED
 
 ## 📖 Project Overview
 
-This is a comprehensive **learning project** demonstrating professional backend development practices relevant to the **gambling industry**. It implements a complete CRUD API with proper architectural patterns, validation, error handling, and business logic.
+This is a comprehensive **learning project** demonstrating professional backend development practices relevant to the **gambling industry**. It implements a complete CRUD API with proper architectural patterns, validation, error handling, business logic, and **enterprise-grade logging**.
 
 ### 🎯 Learning Goals
 
 - ✅ Master Spring Boot ecosystem (Web, Data JPA, Validation, Security)
 - ✅ Understand production-ready development practices
 - ✅ Learn gambling industry domain concepts (odds, margins, probabilities)
+- ✅ **Implement professional logging for compliance and debugging**
 - ✅ Progress from monolith to microservices architecture
 - ✅ Implement enterprise-level features (logging, security, monitoring)
 
@@ -31,7 +32,7 @@ This is a comprehensive **learning project** demonstrating professional backend 
 
 ## 🏗️ Architecture Evolution
 
-### Current: Monolithic Architecture (Phase 1-3)
+### Current: Monolithic Architecture (Phase 1-2)
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -46,6 +47,7 @@ This is a comprehensive **learning project** demonstrating professional backend 
 │  │   - REST endpoints                     │ │
 │  │   - Request validation (@Valid)        │ │
 │  │   - DTOs (Request/Response)            │ │
+│  │   - HTTP request/response logging      │ │
 │  └─────────────────┬──────────────────────┘ │
 │                    ↓                         │
 │  ┌────────────────────────────────────────┐ │
@@ -53,6 +55,9 @@ This is a comprehensive **learning project** demonstrating professional backend 
 │  │   - Business logic                     │ │
 │  │   - Transaction management             │ │
 │  │   - Calculations (margins, probabilities)│
+│  │   - Security validation (SQL injection)│ │
+│  │   - Audit logging (CREATE/UPDATE/DELETE)│
+│  │   - Performance logging (execution time)│
 │  └─────────────────┬──────────────────────┘ │
 │                    ↓                         │
 │  ┌────────────────────────────────────────┐ │
@@ -65,6 +70,16 @@ This is a comprehensive **learning project** demonstrating professional backend 
          ┌──────────────────────┐
          │   PostgreSQL DB      │
          │   - betting_odds     │
+         └──────────────────────┘
+                     │
+                     ↓
+         ┌──────────────────────┐
+         │   LOG FILES          │
+         │   - application.log  │
+         │   - errors.log       │
+         │   - audit.log        │
+         │   - performance.log  │
+         │   - security.log     │
          └──────────────────────┘
 ```
 
@@ -114,12 +129,13 @@ This is a comprehensive **learning project** demonstrating professional backend 
 - **Maven** - Build and dependency management
 
 ### Production Tools
-- **Logback** - Advanced logging framework ⚡ *Phase 2*
+- **Logback** - Advanced logging framework ✅ **COMPLETE**
 - **Spring Boot Actuator** - Monitoring and health checks
 - **Springdoc OpenAPI 2.8.8** - Swagger/OpenAPI documentation
 - **Lombok** - Reduce boilerplate code
 
 ### Future Technologies
+- **JUnit 5 + Mockito** - Unit & Integration testing 📋 *Phase 2.2*
 - **Spring Security** - Authentication & Authorization 🔐 *Phase 3*
 - **JWT (jjwt)** - Token-based authentication 🔐 *Phase 3*
 - **Redis** - Caching layer ⚡ *Phase 4*
@@ -129,7 +145,7 @@ This is a comprehensive **learning project** demonstrating professional backend 
 
 ---
 
-## ✨ Current Features (Phase 1 ✅)
+## ✨ Current Features (Phase 1-2 ✅)
 
 ### Core Functionality
 - ✅ Complete CRUD operations for betting odds
@@ -151,6 +167,32 @@ This is a comprehensive **learning project** demonstrating professional backend 
 - ✅ Advanced pagination with multiple sort fields
 - ✅ Swagger/OpenAPI interactive documentation
 - ✅ Spring Boot Actuator for monitoring and health checks
+
+### Production Logging System ✅ **NEW!**
+- ✅ **5 specialized log files** with automatic rotation
+  - Main application log (10MB rotation, 30 days retention)
+  - Error-only log (separate critical errors)
+  - Audit log (business operations tracking, 365 days)
+  - Performance log (execution time monitoring)
+  - Security log (SQL injection detection, attack attempts)
+- ✅ **Audit logging** for all business operations:
+  - CREATE operations (new odds records)
+  - UPDATE operations (modifications)
+  - DELETE operations (soft/hard deletes)
+  - VALIDATION_FAILED events
+- ✅ **Performance monitoring**:
+  - Method execution time tracking
+  - Slow query detection (>1000ms)
+  - Response time analysis
+- ✅ **Security features**:
+  - SQL injection detection and blocking
+  - XSS attack pattern detection
+  - Suspicious input logging
+  - Transaction rollback on security violations
+- ✅ **Profile-based configuration** (dev/prod/test)
+- ✅ **Async logging** for high performance
+- ✅ **Colored console output** (development)
+- ✅ **Structured logging** for analysis
 
 ---
 
@@ -184,42 +226,60 @@ This is a comprehensive **learning project** demonstrating professional backend 
 
 ---
 
-### Phase 2: Production-Ready Features 🔄 **IN PROGRESS**
-**Duration:** 2-3 weeks | **Complexity:** ⭐⭐⭐ Intermediate
+### Phase 2: Production-Ready Features ✅ **COMPLETE**
+**Duration:** 3 weeks | **Complexity:** ⭐⭐⭐ Intermediate
 
-**Current Status:** Implementing Logging System
-
-#### 2.1 Professional Logging System 🔄 *In Progress*
+#### 2.1 Professional Logging System ✅ **COMPLETE**
 - [x] Logback configuration (`logback-spring.xml`)
-  - [x] Console appender (development)
+  - [x] Console appender (development mode)
   - [x] File appender with rotation (10MB, 30 days)
-  - [x] Error-only file appender
+  - [x] Error-only file appender (critical errors)
   - [x] Audit log file (365 days retention)
-  - [x] Performance log file
-  - [x] Security log file
-  - [x] Async appenders (performance)
+  - [x] Performance log file (execution time tracking)
+  - [x] Security log file (attack detection)
+  - [x] Async appenders (high performance)
   - [x] Spring profiles (dev/prod/test)
-- [ ] Logger classes
-  - [ ] AuditLogger (business operations tracking)
-  - [ ] PerformanceLogger (execution time monitoring)
-  - [ ] SecurityLogger (security events)
-- [ ] Enhanced logging in layers
-  - [ ] Controller logging (HTTP requests/responses)
-  - [ ] Service logging (business operations)
-  - [ ] Exception handler logging (errors)
-- [ ] Log analysis and monitoring
-  - [ ] Structured log format
-  - [ ] Log aggregation strategy
-  - [ ] Alert rules for critical events
+  - [x] Colored console output
+- [x] Service layer logging
+  - [x] Business operations tracking (CREATE/UPDATE/DELETE)
+  - [x] Performance monitoring (method execution time)
+  - [x] Security validation (SQL injection detection)
+  - [x] Transaction rollback on suspicious input
+- [x] Controller logging
+  - [x] HTTP request/response logging
+  - [x] Endpoint access tracking
+- [x] Exception handler logging
+  - [x] Validation failures
+  - [x] Error details and stack traces
+  - [x] User-friendly error responses
 
-**Why Critical for Gambling:**
-- ✅ Regulatory compliance (audit trail)
-- ✅ Fraud detection (suspicious patterns)
-- ✅ Debugging production issues
-- ✅ Performance monitoring
-- ✅ Legal disputes resolution
+**Why Critical for Gambling Industry:**
+- ✅ **Regulatory compliance** - Complete audit trail for authorities
+- ✅ **Fraud detection** - Track suspicious patterns and attacks
+- ✅ **Debugging** - Quick issue resolution in production
+- ✅ **Performance monitoring** - Identify bottlenecks
+- ✅ **Legal disputes** - Evidence for compliance
+- ✅ **Security** - Detect and block malicious input (SQL injection, XSS)
 
-#### 2.2 Unit & Integration Tests 📋 *Planned*
+**What We Built:**
+```
+logs/
+├── application.log        # Main application log (10MB rotation)
+├── errors.log            # Error-only log (critical issues)
+├── audit.log             # Business operations (365 days)
+├── performance.log       # Execution times, slow queries
+└── security.log          # SQL injection, XSS attempts
+```
+
+**Example Log Outputs:**
+```
+[AUDIT] 2025-01-15 14:23:45 - CREATE operation: Created odds for Football match Barcelona vs Real Madrid
+[PERFORMANCE] 2025-01-15 14:23:45 - Method createOdds executed in 156ms
+[SECURITY] 2025-01-15 14:25:12 - SQL injection attempt detected in homeTeam: "Barcelona'; DROP TABLE--"
+[SECURITY] 2025-01-15 14:25:12 - Transaction rolled back due to security violation
+```
+
+#### 2.2 Unit & Integration Tests 📋 **NEXT UP!**
 - [ ] JUnit 5 setup
 - [ ] Mockito for mocking
 - [ ] Unit tests for Service layer
@@ -704,6 +764,63 @@ After starting the application:
 
 ---
 
+## 📝 Logging System
+
+### Log Files Location
+All log files are stored in the `logs/` directory:
+```
+logs/
+├── application.log        # Main application log (10MB rotation, 30 days)
+├── errors.log            # Error-only log (critical issues)
+├── audit.log             # Business operations (365 days retention)
+├── performance.log       # Execution times, slow queries
+└── security.log          # SQL injection, XSS attempts
+```
+
+### Log Levels by Profile
+- **Development** (`dev`): DEBUG level, colored console + file output
+- **Production** (`prod`): INFO level, file output only, async logging
+- **Test** (`test`): WARN level, minimal logging
+
+### Change Log Level at Runtime
+```bash
+# View current log level
+GET http://localhost:8080/actuator/loggers/com.gambling.betting_odds_api
+
+# Change log level to DEBUG
+POST http://localhost:8080/actuator/loggers/com.gambling.betting_odds_api
+Content-Type: application/json
+
+{
+  "configuredLevel": "DEBUG"
+}
+```
+
+### Audit Log Examples
+```
+[AUDIT] 2025-01-15 14:23:45 - CREATE: Created odds for Football match Barcelona vs Real Madrid
+[AUDIT] 2025-01-15 14:25:12 - UPDATE: Updated odds #123 - Football: Barcelona vs Real Madrid
+[AUDIT] 2025-01-15 14:30:08 - DELETE: Soft deleted odds #123
+[AUDIT] 2025-01-15 14:35:22 - VALIDATION_FAILED: Invalid home team name format
+```
+
+### Performance Log Examples
+```
+[PERFORMANCE] 2025-01-15 14:23:45 - Method createOdds executed in 156ms
+[PERFORMANCE] 2025-01-15 14:25:12 - Method updateOdds executed in 89ms
+[PERFORMANCE] 2025-01-15 14:30:08 - SLOW QUERY DETECTED: getOddsBySport took 1234ms
+```
+
+### Security Log Examples
+```
+[SECURITY] 2025-01-15 14:25:12 - SQL injection attempt detected in homeTeam: "Barcelona'; DROP TABLE--"
+[SECURITY] 2025-01-15 14:25:12 - Transaction rolled back due to security violation
+[SECURITY] 2025-01-15 14:28:45 - XSS attempt detected in sport field: "<script>alert('xss')</script>"
+[SECURITY] 2025-01-15 14:30:22 - Suspicious input blocked: Multiple SQL keywords detected
+```
+
+---
+
 ## 💡 Business Logic Example
 
 ### Bookmaker Margin Calculation
@@ -743,12 +860,16 @@ Bookmaker Margin: 104.8% - 100% = 4.8%
 - ✅ RESTful API Design (HTTP methods, status codes)
 - ✅ Transaction Management (`@Transactional`)
 - ✅ Clean Code (Naming, SOLID principles)
+- ✅ **Production Logging** (Audit, Performance, Security)
+- ✅ **Security Validation** (SQL injection, XSS prevention)
 
 ### Domain Knowledge
 - ✅ Gambling industry concepts (odds formats, margins)
 - ✅ Business logic implementation (calculations)
 - ✅ Data validation (industry constraints)
 - ✅ Regulatory compliance considerations
+- ✅ **Security threats** (SQL injection, XSS)
+- ✅ **Audit requirements** (compliance tracking)
 
 ### Technologies Mastered
 - ✅ Spring Boot ecosystem
@@ -756,9 +877,52 @@ Bookmaker Margin: 104.8% - 100% = 4.8%
 - ✅ RESTful API development
 - ✅ Maven build management
 - ✅ Git version control
-- 🔄 Professional logging (Logback) - *In Progress*
+- ✅ **Logback** (enterprise logging)
+- ✅ **Security patterns** (input validation, attack detection)
+- 📋 JUnit 5 + Mockito - *Next Up*
 - 📋 Spring Security - *Planned*
 - 🚀 Microservices architecture - *Future*
+
+---
+
+## 🔒 Security Features
+
+### Input Validation & Sanitization
+- ✅ SQL injection detection (DROP, DELETE, INSERT, etc.)
+- ✅ XSS attack prevention (script tags, event handlers)
+- ✅ Suspicious pattern detection (multiple SQL keywords)
+- ✅ Transaction rollback on security violations
+- ✅ Comprehensive security logging
+
+### Defense in Depth
+1. **Layer 1**: Bean Validation (@Valid, @NotBlank, etc.)
+2. **Layer 2**: Service layer security checks (SQL injection, XSS)
+3. **Layer 3**: JPA prepared statements (parameterized queries)
+4. **Layer 4**: Transaction management (rollback on violations)
+5. **Layer 5**: Logging and monitoring (attack detection)
+
+### Example: Blocked Malicious Input
+```json
+// Request with SQL injection attempt
+{
+  "sport": "Football",
+  "homeTeam": "Barcelona'; DROP TABLE betting_odds--",
+  "awayTeam": "Real Madrid",
+  ...
+}
+
+// Response
+{
+  "timestamp": "2025-01-15T14:25:12",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Invalid input: SQL injection pattern detected in home team name"
+}
+
+// Logged to security.log
+[SECURITY] 2025-01-15 14:25:12 - SQL injection attempt detected in homeTeam
+[SECURITY] 2025-01-15 14:25:12 - Transaction rolled back due to security violation
+```
 
 ---
 
@@ -795,4 +959,32 @@ If you have questions about the project or want to discuss implementation detail
 
 ---
 
+## 🎯 What's Next?
+
+### Immediate Next Steps (Phase 2.2)
+1. **Unit Tests** - Test Service layer business logic
+2. **Integration Tests** - Test REST endpoints end-to-end
+3. **Test Coverage** - Achieve >80% code coverage
+4. **Test Documentation** - Document test strategies
+
+### After Testing (Phase 3)
+1. **Spring Security** - Authentication & Authorization
+2. **JWT Tokens** - Stateless authentication
+3. **User Management** - Registration, login, roles
+4. **Rate Limiting** - Prevent API abuse
+
+---
+
 **⭐ If you find this project helpful for learning, please give it a star!**
+
+---
+
+## 📊 Project Statistics
+
+- **Lines of Code**: ~2,000 (Java + XML)
+- **Total Commits**: 20+
+- **Features Completed**: Core CRUD + Logging System
+- **Test Coverage**: 0% (Phase 2.2 upcoming)
+- **API Endpoints**: 10
+- **Database Tables**: 1 (odds)
+- **Log Files**: 5 (application, errors, audit, performance, security)
