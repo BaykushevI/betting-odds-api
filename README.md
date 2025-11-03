@@ -6,8 +6,9 @@ A production-ready RESTful API for managing betting odds for sports matches, bui
 
 ```
 Phase 1: Core CRUD API              ✅ COMPLETE
-Phase 2: Production Features        ✅ COMPLETE (Logging System finished!)
-Phase 3: Security & Testing         📋 NEXT (Unit & Integration Tests)
+Phase 2.1: Production Logging       ✅ COMPLETE
+Phase 2.2: Unit & Integration Tests 🔄 IN PROGRESS (Day 2 DONE: 6/45 tests)
+Phase 3: Security & Authentication  📋 PLANNED
 Phase 4: Performance & Reliability  📋 PLANNED  
 Phase 5: Microservices & Gateway    🚀 FUTURE
 Phase 6: Cloud Deployment           ☁️ ADVANCED
@@ -278,6 +279,52 @@ logs/
 [SECURITY] 2025-01-15 14:25:12 - SQL injection attempt detected in homeTeam: "Barcelona'; DROP TABLE--"
 [SECURITY] 2025-01-15 14:25:12 - Transaction rolled back due to security violation
 ```
+
+#### 2.2 Unit & Integration Tests 🔄 **IN PROGRESS - Day 1**
+
+**Goal:** Achieve 80%+ test coverage with professional testing practices
+
+**Progress Tracker:**
+
+📅 **Week 1: Service Layer Tests (Days 1-7)**
+- [x] Day 1: Test setup + First test (createOdds - happy path) ✅ **DONE**
+- [x] Day 2: READ tests (getById, getAll, getBySport) ✅ **DONE**
+- [ ] Day 3: UPDATE tests (updateOdds, deactivateOdds)
+- [ ] Day 4: DELETE tests + Edge cases
+- [ ] Day 5: Exception tests (ResourceNotFoundException, InvalidOddsException)
+- [ ] Day 6: Business logic tests (margin calculation, security validation)
+- [ ] Day 7: Service layer review + Git commit
+
+📅 **Week 2: Mapper & Repository Tests (Days 8-14)**
+- [ ] Day 8-9: Mapper tests (DTO ↔ Entity conversion)
+- [ ] Day 10-11: Repository tests (@DataJpaTest)
+- [ ] Day 12-14: Custom query tests + Pagination tests
+
+📅 **Week 3: Integration Tests (Days 15-21)**
+- [ ] Day 15-17: Controller integration tests (@SpringBootTest + MockMvc)
+- [ ] Day 18-19: End-to-end HTTP tests (full request/response cycle)
+- [ ] Day 20-21: Test coverage report + Documentation
+
+**Current Test Coverage:**
+
+| Component | Tests Written | Coverage | Status |
+|-----------|--------------|----------|--------|
+| **BettingOddsService** | 6/15 | ~40% | 🔄 In Progress |
+| OddsMapper | 0/8 | 0% | ⏳ Pending |
+| BettingOddsRepository | 0/10 | 0% | ⏳ Pending |
+| BettingOddsController | 0/12 | 0% | ⏳ Pending |
+| **TOTAL** | **6/45** | **~13%** | 🎯 **Target: 80%+** |
+
+**What We're Learning:**
+- ✅ JUnit 5 basics (test structure, assertions)
+- ✅ Mockito fundamentals (mocking dependencies)
+- ✅ AAA pattern (Arrange-Act-Assert)
+- ✅ Test naming conventions
+- 📋 @DataJpaTest for repository testing
+- 📋 @SpringBootTest for integration testing
+- 📋 MockMvc for HTTP endpoint testing
+
+---
 
 #### 2.2 Unit & Integration Tests 📋 **NEXT UP!**
 - [ ] JUnit 5 setup
