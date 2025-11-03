@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- ============================================ -->
+    <!-- PROPERTIES - Configuration variables         -->
+    <!-- ============================================ -->
+    
+    <!-- Application name for log files -->
+    <property name="APP_NAME" value="betting-odds-api"/>
