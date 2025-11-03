@@ -1,73 +1,136 @@
 package com.gambling.betting_odds_api.controller;
 
-// Internal project imports
-import com.gambling.betting_odds_api.dto.CreateOddsRequest;
-import com.gambling.betting_odds_api.dto.OddsResponse;
-import com.gambling.betting_odds_api.dto.PageResponse;
-import com.gambling.betting_odds_api.dto.UpdateOddsRequest;
-import com.gambling.betting_odds_api.service.BettingOddsService;
+// ═══════════════════════════════════════════════════════════════════════════
+// INTERNAL PROJECT IMPORTS
+// ═══════════════════════════════════════════════════════════════════════════
+// DTOs - Data Transfer Objects for request/response
+import com.gambling.betting_odds_api.dto.CreateOddsRequest;  // Request DTO for creating odds
+import com.gambling.betting_odds_api.dto.OddsResponse;       // Response DTO for odds data
+import com.gambling.betting_odds_api.dto.PageResponse;       // Generic paginated response wrapper
+import com.gambling.betting_odds_api.dto.UpdateOddsRequest;  // Request DTO for updating odds
 
-// Swagger/OpenAPI imports
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
+// Service Layer - Business logic
+import com.gambling.betting_odds_api.service.BettingOddsService; // Main service for odds operations
 
-// Jakarta imports
-import jakarta.validation.Valid;
+// ═══════════════════════════════════════════════════════════════════════════
+// SWAGGER/OPENAPI IMPORTS - API Documentation
+// ═══════════════════════════════════════════════════════════════════════════
+import io.swagger.v3.oas.annotations.Operation;              // Describes what endpoint does
+import io.swagger.v3.oas.annotations.Parameter;              // Describes endpoint parameters
+import io.swagger.v3.oas.annotations.media.Content;          // Describes response content type
+import io.swagger.v3.oas.annotations.media.Schema;           // Links to DTO schema
+import io.swagger.v3.oas.annotations.responses.ApiResponse;  // Single response documentation
+import io.swagger.v3.oas.annotations.responses.ApiResponses; // Multiple responses documentation
 
-// Lombok
-import lombok.RequiredArgsConstructor;
+// ═══════════════════════════════════════════════════════════════════════════
+// JAKARTA IMPORTS - Java EE Standard (formerly javax)
+// ═══════════════════════════════════════════════════════════════════════════
+import jakarta.validation.Valid; // Triggers validation on @RequestBody
 
-// Spring Data
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+// ═══════════════════════════════════════════════════════════════════════════
+// LOMBOK - Reduces boilerplate code
+// ═══════════════════════════════════════════════════════════════════════════
+import lombok.RequiredArgsConstructor; // Auto-generates constructor for final fields
+import lombok.extern.slf4j.Slf4j;      // Auto-generates Logger instance (log variable)
 
-// Spring Web
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+// ═══════════════════════════════════════════════════════════════════════════
+// SPRING DATA - Pagination and Sorting
+// ═══════════════════════════════════════════════════════════════════════════
+import org.springframework.data.domain.PageRequest; // Combines page number, size, and sort
+import org.springframework.data.domain.Pageable;    // Interface for pagination parameters
+import org.springframework.data.domain.Sort;        // Sorting configuration
 
-// Java standard library imports
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.ArrayList;
+// ═══════════════════════════════════════════════════════════════════════════
+// SPRING WEB - REST API Functionality
+// ═══════════════════════════════════════════════════════════════════════════
+import org.springframework.http.HttpStatus;      // HTTP status codes (200, 201, 404, etc.)
+import org.springframework.http.ResponseEntity;  // Wrapper for HTTP response with status and body
+import org.springframework.web.bind.annotation.*; // REST annotations (@GetMapping, @PostMapping, etc.)
 
-@RestController
-@RequestMapping("/api/odds")
-@RequiredArgsConstructor
+// ═══════════════════════════════════════════════════════════════════════════
+// JAVA STANDARD LIBRARY - Core Java Classes
+// ═══════════════════════════════════════════════════════════════════════════
+import java.util.ArrayList; // Dynamic array for sort parameters
+import java.util.HashMap;   // Key-value pairs for success messages
+import java.util.List;      // Interface for ordered collections
+import java.util.Map;       // Interface for key-value pairs
+
+/**
+ * BettingOddsController - REST API endpoints for managing betting odds.
+ * 
+ * ═══════════════════════════════════════════════════════════════════════════
+ * CONTROLLER LAYER RESPONSIBILITIES:
+ * ═══════════════════════════════════════════════════════════════════════════
+ * 
+ * 1. HTTP REQUEST HANDLING
+ *    - Map URLs to methods (@GetMapping, @PostMapping, etc.)
+ *    - Extract parameters from request (path variables, query params, body)
+ *    - Validate input with @Valid annotation
+ * 
+ * 2. DELEGATE TO SERVICE LAYER
+ *    - Controller does NOT contain business logic
+ *    - All operations delegated to BettingOddsService
+ *    - Controller = thin layer, Service = thick layer
+ * 
+ * 3. HTTP RESPONSE BUILDING
+ *    - Convert service results to HTTP responses
+ *    - Set appropriate HTTP status codes (200, 201, 404, etc.)
+ *    - Return DTOs (never entities!)
+ * 
+ * 4. API DOCUMENTATION
+ *    - Swagger annotations for interactive docs
+ *    - Appears at http://localhost:8080/swagger-ui.html
+ * 
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+@RestController                      // Combines @Controller + @ResponseBody
+@RequestMapping("/api/odds")         // Base path for all endpoints in this controller
+@RequiredArgsConstructor             // Lombok: generates constructor for final fields
+@Slf4j                               // Lombok: generates Logger log = LoggerFactory.getLogger(...)
 public class BettingOddsController {
     
+    // Dependency Injection via constructor (thanks to @RequiredArgsConstructor)
     private final BettingOddsService service;
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // GET ENDPOINTS - Read Operations
+    // ═══════════════════════════════════════════════════════════════════════
+    
+    /**
+     * GET /api/odds - Retrieve all betting odds with pagination and sorting.
+     * 
+     * Examples:
+     * - /api/odds                                      → All odds (unpaginated)
+     * - /api/odds?page=0&size=10                       → First page, 10 items
+     * - /api/odds?sort=matchDate,desc                  → Sorted by date descending
+     * - /api/odds?page=1&sort=sport,asc&sort=homeOdds,desc → Multiple sort fields
+     */
     @Operation(
-            summary = "Get all betting odds",
-            description = "Retrieve all betting odds with optional pagination and sorting." +
-                    "Use page and size parameters for pagination: " +
-                    "Use sort parameter in the format 'property,direction' (e.g., 'sort,asc')."
+        summary = "Get all betting odds",
+        description = "Retrieve all betting odds with optional pagination and sorting. " +
+                      "Use 'page' and 'size' for pagination. " +
+                      "Use 'sort' in format 'property,direction' (e.g., 'matchDate,desc')."
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Successfully retrieved odds",
-                    content = @Content(schema = @Schema(implementation = PageResponse.class)))
+        @ApiResponse(
+            responseCode = "200", 
+            description = "Successfully retrieved odds",
+            content = @Content(schema = @Schema(implementation = PageResponse.class))
+        )
     })
-    // GET /api/odds - Get all odds (supports pagination and sorting)
-    // Examples:
-    // /api/odds - get all (unpaginated)
-    // /api/odds?page=0&size=10 - first page, 10 items
-    // /api/odds?page=1&size=20&sort=matchDate,desc - second page, sorted by date descending
-    // /api/odds?page=0&size=10&sort=sport,asc&sort=homeOdds,desc - multiple sort fields
     @GetMapping
     public ResponseEntity<PageResponse<OddsResponse>> getAllOdds(
             @Parameter(description = "Page number (0-based index)", example = "0")
             @RequestParam(required = false) Integer page,
+            
             @Parameter(description = "Number of items per page (max 100)", example = "20")
             @RequestParam(required = false) Integer size,
-            @Parameter(description = "Sorting criteria in the format: property,direction. " +
-                    "Multiple sort parameters are supported.", example = "sport,asc")
+            
+            @Parameter(
+                description = "Sorting criteria in format 'property,direction'. " +
+                              "Multiple sort parameters supported.", 
+                example = "sport,asc"
+            )
             @RequestParam(required = false) List<String> sort) {
         
         Pageable pageable = buildPageable(page, size, sort);
@@ -75,7 +138,9 @@ public class BettingOddsController {
         return ResponseEntity.ok(response);
     }
     
-    // GET /api/odds/active - Get only active odds (supports pagination)
+    /**
+     * GET /api/odds/active - Get only active odds.
+     */
     @GetMapping("/active")
     public ResponseEntity<PageResponse<OddsResponse>> getActiveOdds(
             @RequestParam(required = false) Integer page,
@@ -87,14 +152,18 @@ public class BettingOddsController {
         return ResponseEntity.ok(response);
     }
     
-    // GET /api/odds/{id} - Get odds by ID
+    /**
+     * GET /api/odds/{id} - Get odds by ID.
+     */
     @GetMapping("/{id}")
     public ResponseEntity<OddsResponse> getOddsById(@PathVariable Long id) {
         OddsResponse odds = service.getOddsById(id);
         return ResponseEntity.ok(odds);
     }
     
-    // GET /api/odds/sport/{sport} - Get odds by sport (supports pagination)
+    /**
+     * GET /api/odds/sport/{sport} - Get odds by sport.
+     */
     @GetMapping("/sport/{sport}")
     public ResponseEntity<PageResponse<OddsResponse>> getOddsBySport(
             @PathVariable String sport,
@@ -107,7 +176,9 @@ public class BettingOddsController {
         return ResponseEntity.ok(response);
     }
     
-    // GET /api/odds/upcoming - Get upcoming matches (supports pagination)
+    /**
+     * GET /api/odds/upcoming - Get upcoming matches (future dates only).
+     */
     @GetMapping("/upcoming")
     public ResponseEntity<PageResponse<OddsResponse>> getUpcomingMatches(
             @RequestParam(required = false) Integer page,
@@ -119,7 +190,9 @@ public class BettingOddsController {
         return ResponseEntity.ok(response);
     }
     
-    // GET /api/odds/team/{teamName} - Get matches for specific team (supports pagination)
+    /**
+     * GET /api/odds/team/{teamName} - Get matches for specific team.
+     */
     @GetMapping("/team/{teamName}")
     public ResponseEntity<PageResponse<OddsResponse>> getMatchesForTeam(
             @PathVariable String teamName,
@@ -132,65 +205,131 @@ public class BettingOddsController {
         return ResponseEntity.ok(response);
     }
     
-    @Operation(summary = "Create new betting odds", description = "Create a new odds entry for a sports match.")
+    /**
+     * GET /api/odds/{id}/margin - Calculate bookmaker margin for specific odds.
+     */
+    @GetMapping("/{id}/margin")
+    public ResponseEntity<OddsResponse> getBookmakerMargin(@PathVariable Long id) {
+        OddsResponse response = service.getOddsWithMargin(id);
+        return ResponseEntity.ok(response);
+    }
+    
+    // ═══════════════════════════════════════════════════════════════════════
+    // POST ENDPOINT - Create Operation
+    // ═══════════════════════════════════════════════════════════════════════
+    
+    /**
+     * POST /api/odds - Create new betting odds.
+     * 
+     * @Valid triggers validation rules from CreateOddsRequest
+     * Returns 201 CREATED on success
+     */
+    @Operation(
+        summary = "Create new betting odds", 
+        description = "Create a new odds entry for a sports match."
+    )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Odds created successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid input data")
+        @ApiResponse(responseCode = "201", description = "Odds created successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
-    // POST /api/odds - Create new odds
     @PostMapping
     public ResponseEntity<OddsResponse> createOdds(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Details of the odds to be created",
-                    required = true,
-                    content = @Content(schema = @Schema(implementation = CreateOddsRequest.class))
+                description = "Details of the odds to be created",
+                required = true,
+                content = @Content(schema = @Schema(implementation = CreateOddsRequest.class))
             )    
-        @Valid @RequestBody CreateOddsRequest request) {
+            @Valid @RequestBody CreateOddsRequest request) {
+        
+        // Basic logging at controller level (detailed logging in service)
+        log.info("POST /api/odds - Creating odds for: {} vs {}", 
+                request.getHomeTeam(), request.getAwayTeam());
+
         OddsResponse created = service.createOdds(request);
+
+        log.info("POST /api/odds - Created odds with ID: {}", created.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
     
-    // PUT /api/odds/{id} - Update existing odds
+    // ═══════════════════════════════════════════════════════════════════════
+    // PUT ENDPOINT - Update Operation
+    // ═══════════════════════════════════════════════════════════════════════
+    
+    /**
+     * PUT /api/odds/{id} - Update existing odds.
+     */
     @PutMapping("/{id}")
     public ResponseEntity<OddsResponse> updateOdds(
             @PathVariable Long id, 
             @Valid @RequestBody UpdateOddsRequest request) {
+        
         OddsResponse updated = service.updateOdds(id, request);
         return ResponseEntity.ok(updated);
     }
     
-    // PATCH /api/odds/{id}/deactivate - Deactivate odds (soft delete)
+    // ═══════════════════════════════════════════════════════════════════════
+    // PATCH ENDPOINT - Soft Delete Operation
+    // ═══════════════════════════════════════════════════════════════════════
+    
+    /**
+     * PATCH /api/odds/{id}/deactivate - Deactivate odds (soft delete).
+     * 
+     * Sets active=false instead of deleting from database.
+     * Preferred over hard delete for audit trail.
+     */
     @PatchMapping("/{id}/deactivate")
     public ResponseEntity<Map<String, String>> deactivateOdds(@PathVariable Long id) {
         service.deactivateOdds(id);
         return ResponseEntity.ok(createSuccessResponse("Odds deactivated successfully"));
     }
     
-    // DELETE /api/odds/{id} - Delete odds permanently
+    // ═══════════════════════════════════════════════════════════════════════
+    // DELETE ENDPOINT - Hard Delete Operation
+    // ═══════════════════════════════════════════════════════════════════════
+    
+    /**
+     * DELETE /api/odds/{id} - Permanently delete odds.
+     * 
+     * ⚠️ WARNING: This is PERMANENT and IRREVERSIBLE!
+     * Should be rare in production. Prefer soft delete (deactivate).
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, String>> deleteOdds(@PathVariable Long id) {
         service.deleteOdds(id);
         return ResponseEntity.ok(createSuccessResponse("Odds deleted successfully"));
     }
     
-    // GET /api/odds/{id}/margin - Calculate bookmaker margin for specific odds
-    @GetMapping("/{id}/margin")
-    public ResponseEntity<OddsResponse> getBookmakerMargin(@PathVariable Long id) {
-        // Use the new method that returns OddsResponse with margin calculated
-        OddsResponse response = service.getOddsWithMargin(id);
-        return ResponseEntity.ok(response);
-    }
+    // ═══════════════════════════════════════════════════════════════════════
+    // HELPER METHODS - Private Utilities
+    // ═══════════════════════════════════════════════════════════════════════
     
-    // Helper method to create success response
+    /**
+     * Create success response map.
+     * 
+     * @param message Success message
+     * @return Map with "message" key
+     */
     private Map<String, String> createSuccessResponse(String message) {
         Map<String, String> response = new HashMap<>();
         response.put("message", message);
         return response;
     }
     
-    // Helper method to build Pageable with sorting
+    /**
+     * Build Pageable object from request parameters.
+     * 
+     * Handles three scenarios:
+     * 1. No pagination params → return all (unpaged)
+     * 2. Pagination with sort → paginated and sorted
+     * 3. Pagination without sort → paginated, sorted by ID DESC (newest first)
+     * 
+     * @param page Page number (0-indexed)
+     * @param size Items per page (default 20, max 100)
+     * @param sort Sort parameters (format: "property,direction")
+     * @return Pageable configuration
+     */
     private Pageable buildPageable(Integer page, Integer size, List<String> sort) {
-        // If no pagination params, return unpaged (all results)
+        // Scenario 1: No pagination requested → return all results
         if (page == null && size == null) {
             if (sort != null && !sort.isEmpty()) {
                 return Pageable.unpaged(buildSort(sort));
@@ -198,12 +337,13 @@ public class BettingOddsController {
             return Pageable.unpaged();
         }
         
+        // Scenario 2 & 3: Pagination requested
         // Validate and set defaults
         int pageNumber = (page != null && page >= 0) ? page : 0;
         int pageSize = (size != null && size > 0) ? size : 20; // Default 20 items per page
         if (pageSize > 100) pageSize = 100; // Max 100 items per page
         
-        // Build sort
+        // Build sort configuration
         Sort sortObj = (sort != null && !sort.isEmpty()) 
                 ? buildSort(sort) 
                 : Sort.by(Sort.Direction.DESC, "id"); // Default: newest first
@@ -211,17 +351,25 @@ public class BettingOddsController {
         return PageRequest.of(pageNumber, pageSize, sortObj);
     }
     
-    // Helper method to build Sort from List of strings
+    /**
+     * Build Sort object from list of sort parameters.
+     * 
+     * Input format: ["sport,asc", "homeOdds,desc"]
+     * After parsing: Sort by sport ASC, then by homeOdds DESC
+     * 
+     * Process:
+     * 1. Flatten comma-separated values
+     * 2. Validate pairs (property + direction)
+     * 3. Create Sort.Order for each pair
+     * 
+     * @param sort List of sort parameters
+     * @return Sort configuration
+     * @throws IllegalArgumentException if invalid format
+     */
     private Sort buildSort(List<String> sort) {
-        // Debug logging
-        System.out.println("DEBUG: sort list size: " + sort.size());
-        for (int i = 0; i < sort.size(); i++) {
-            System.out.println("DEBUG: sort[" + i + "] = '" + sort.get(i) + "'");
-        }
-        
-        // First, we need to flatten the list by splitting each element by comma
-        // Input: ["sport,asc", "homeOdds,desc"]
-        // After flatten: ["sport", "asc", "homeOdds", "desc"]
+        // Step 1: Flatten comma-separated values
+        // Input:  ["sport,asc", "homeOdds,desc"]
+        // Output: ["sport", "asc", "homeOdds", "desc"]
         List<String> flattened = new ArrayList<>();
         for (String sortParam : sort) {
             String[] parts = sortParam.split(",");
@@ -230,25 +378,21 @@ public class BettingOddsController {
             }
         }
         
-        System.out.println("DEBUG: After flattening, size: " + flattened.size());
-        for (int i = 0; i < flattened.size(); i++) {
-            System.out.println("DEBUG: flattened[" + i + "] = '" + flattened.get(i) + "'");
-        }
-        
-        // Now check if we have even number of elements (property, direction pairs)
+        // Step 2: Validate pairs
         if (flattened.size() % 2 != 0) {
-            throw new IllegalArgumentException("Sort parameters must come in pairs (property, direction). Got " + flattened.size() + " parameters after splitting.");
+            throw new IllegalArgumentException(
+                "Sort parameters must come in pairs (property, direction). " +
+                "Got " + flattened.size() + " parameters after splitting."
+            );
         }
         
-        // Process pairs: [property, direction, property, direction, ...]
+        // Step 3: Process pairs into Sort.Order array
         int pairCount = flattened.size() / 2;
         Sort.Order[] orders = new Sort.Order[pairCount];
         
         for (int i = 0; i < flattened.size(); i += 2) {
             String property = flattened.get(i);
             String directionStr = flattened.get(i + 1);
-            
-            System.out.println("DEBUG: Pair " + (i/2) + " - Property: '" + property + "', Direction: '" + directionStr + "'");
             
             // Parse direction
             Sort.Direction direction;
@@ -257,10 +401,12 @@ public class BettingOddsController {
             } else if ("asc".equalsIgnoreCase(directionStr)) {
                 direction = Sort.Direction.ASC;
             } else {
-                throw new IllegalArgumentException("Invalid sort direction: '" + directionStr + "'. Must be 'asc' or 'desc'.");
+                throw new IllegalArgumentException(
+                    "Invalid sort direction: '" + directionStr + "'. " +
+                    "Must be 'asc' or 'desc'."
+                );
             }
             
-            System.out.println("DEBUG: Creating Sort.Order: property='" + property + "', direction=" + direction);
             orders[i / 2] = new Sort.Order(direction, property);
         }
         
