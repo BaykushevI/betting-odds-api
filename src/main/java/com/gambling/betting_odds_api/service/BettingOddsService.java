@@ -12,6 +12,11 @@ import com.gambling.betting_odds_api.dto.UpdateOddsRequest;  // Request DTO for 
 // Exceptions - Custom error handling
 import com.gambling.betting_odds_api.exception.ResourceNotFoundException; // 404 Not Found exception
 
+// Logging - Professional logging system
+import com.gambling.betting_odds_api.logging.AuditLogger;
+import com.gambling.betting_odds_api.logging.PerformanceLogger;
+import com.gambling.betting_odds_api.logging.SecurityLogger;
+
 // Mapper - DTO ↔ Entity conversion
 import com.gambling.betting_odds_api.mapper.OddsMapper; // Converts between DTOs and Entities
 
@@ -94,6 +99,10 @@ public class BettingOddsService {
     private final BettingOddsRepository repository; // Database access
     private final OddsMapper mapper;                 // DTO ↔ Entity conversion
     
+    private final AuditLogger auditLogger;           // Audit logging
+    private final PerformanceLogger performanceLogger; // Performance logging
+    private final SecurityLogger securityLogger;     // Security logging
+
     // Future: Logger classes will be added here in next commits
     // private final AuditLogger auditLogger;
     // private final PerformanceLogger performanceLogger;
@@ -122,26 +131,39 @@ public class BettingOddsService {
      */
     @Transactional
     public OddsResponse createOdds(CreateOddsRequest request) {
-        // Log entry point
-        log.info("Creating new betting odds for {} vs {}",
-                request.getHomeTeam(), request.getAwayTeam());
         
-        // Debug log with full details (only visible when log level is DEBUG)
+        long startTime = PerformanceLogger.startTiming();
+
+        log.infor("createing new betting odds for match: {} vs {}",
+                request.getHomeTeam(), request.getAwayTeam());
+
         log.debug("Full odds details: sport={}, homeOdds={}, drawOdds={}, awayOdds={}, matchDate={}",
                 request.getSport(), request.getHomeOdds(),
-                request.getDrawOdds(), request.getAwayOdds(), request.getMatchDate());
-        
-        // Convert DTO to Entity
-        BettingOdds odds = mapper.toEntity(request);
-        
-        // Save to database (JPA generates ID and sets timestamps)
-        BettingOdds saved = repository.save(odds);
-        
-        // Log success
-        log.info("Successfully created odds with ID: {}", saved.getId());
-        
-        // Convert Entity back to Response DTO
-        return mapper.toResponse(saved);
+                request.getDrawOdds(), request.getAwayOdds(),
+                request.getMatchDate());
+
+        try{
+            validateOddsForSecurity(request);
+
+            BettingOdds odds = mapper.toEntity(request);
+            BettingOdds saved = repository.save(odds);
+            log.info("Successfully created betting odds with ID: {}", saved.getId());
+
+            auditLogger.logOddsCreated(
+                saved.getId(), 
+                saved.getSport(),
+                saved.getHomeTeam(),
+                saved.getAwayTeam()
+            );
+
+            long duration = PerformanceLogger.endTiming(startTime);
+            performanceLogger.logDatabaseQuery("CREATE_ODDS", duration);
+
+            return mapper.toResponse(saved);
+        } catch (Exception ex){
+            log.error("Error creating betting odds: {}", ex.getMessage());
+            throw ex;
+        }
     }
     
     // ═══════════════════════════════════════════════════════════════════════
