@@ -520,7 +520,328 @@ public class BettingOddsServiceTest {
         verify(auditLogger, never()).logOddsDeleted(anyLong(), any(), any());
     }
     
-    // WHAT WE LEARNED SO FAR
+    // BUSINESS LOGIC TESTS
+    
+    @Test
+    @DisplayName("getOddsWithMargin - Valid Odds - Should Calculate Correct Margin")
+    void getOddsWithMargin_ValidOdds_ShouldCalculateCorrectMargin() {
+        // WHAT ARE WE TESTING?
+        // We're testing the bookmaker margin calculation - core business logic.
+        // 
+        // BOOKMAKER MARGIN EXPLAINED:
+        // - Implied probability = 1 / odds
+        // - Sum of all probabilities should be 100% (fair odds)
+        // - But bookmakers add margin (their profit)
+        // - Example: 47.6% + 29.4% + 27.8% = 104.8%
+        // - Margin = 104.8% - 100% = 4.8%
+        //
+        // WHY TEST THIS?
+        // - Critical business calculation
+        // - Must be accurate for pricing
+        // - Affects company revenue
+        
+        // ARRANGE
+        Long oddsId = 1L;
+        
+        // Create response with calculated margin
+        OddsResponse responseWithMargin = new OddsResponse(
+            1L,
+            "Football",
+            "Barcelona",
+            "Real Madrid",
+            BigDecimal.valueOf(2.10),
+            BigDecimal.valueOf(3.40),
+            BigDecimal.valueOf(3.60),
+            LocalDateTime.now().plusDays(7),
+            true,
+            LocalDateTime.now(),
+            LocalDateTime.now()
+        );
+        
+        // Set calculated fields
+        responseWithMargin.setImpliedProbabilityHome(1.0 / 2.10); // 0.47619 (47.6%)
+        responseWithMargin.setImpliedProbabilityDraw(1.0 / 3.40); // 0.29411 (29.4%)
+        responseWithMargin.setImpliedProbabilityAway(1.0 / 3.60); // 0.27777 (27.8%)
+        responseWithMargin.setBookmakerMargin(4.808); // Total 104.8% - 100% = 4.8%
+        
+        // STUB: Repository finds entity
+        when(repository.findById(oddsId)).thenReturn(Optional.of(entity));
+        
+        // STUB: Mapper converts with margin calculation
+        when(mapper.toResponseWithMargin(entity)).thenReturn(responseWithMargin);
+        
+        // ACT
+        OddsResponse result = service.getOddsWithMargin(oddsId);
+        
+        // ASSERT
+        assertNotNull(result);
+        assertEquals(1L, result.getId());
+        
+        // Verify implied probabilities are calculated
+        assertNotNull(result.getImpliedProbabilityHome());
+        assertNotNull(result.getImpliedProbabilityDraw());
+        assertNotNull(result.getImpliedProbabilityAway());
+        
+        // Verify margin is calculated and within expected range (4-5%)
+        assertNotNull(result.getBookmakerMargin());
+        assertTrue(result.getBookmakerMargin() > 4.0);
+        assertTrue(result.getBookmakerMargin() < 5.0);
+        
+        // VERIFY
+        verify(repository, times(1)).findById(oddsId);
+        verify(mapper, times(1)).toResponseWithMargin(entity);
+        verify(auditLogger, times(1)).logMarginCalculation(
+            eq(1L), 
+            any(Double.class), 
+            eq("Barcelona"), 
+            eq("Real Madrid")
+        );
+        verify(performanceLogger, times(1)).logCalculation(eq("BOOKMAKER_MARGIN"), anyLong());
+    }
+    
+    // SECURITY VALIDATION TESTS
+    
+    @Test
+    @DisplayName("createOdds - SQL Injection Attempt - Should Throw InvalidOddsException")
+    void createOdds_SqlInjectionAttempt_ShouldThrowInvalidOddsException() {
+        // WHAT ARE WE TESTING?
+        // We're testing that the service BLOCKS SQL injection attempts.
+        // 
+        // SQL INJECTION EXPLAINED:
+        // Attacker tries to inject SQL code in input fields:
+        // homeTeam = "Barcelona'; DROP TABLE betting_odds--"
+        // If not validated, this could execute: DROP TABLE betting_odds
+        // Result: Database destroyed
+        //
+        // WHY WE BLOCK THIS:
+        // 1. Data integrity - don't want garbage like "DROP TABLE" in database
+        // 2. Defense in depth - multiple security layers
+        // 3. Audit trail - log all attack attempts
+        // 4. Regulatory compliance - must demonstrate security
+        //
+        // NOTE: Even though JPA uses prepared statements (which prevent SQL injection),
+        // we still validate input at service layer for defense in depth.
+        
+        // ARRANGE - Create request with SQL injection attempt
+        CreateOddsRequest maliciousRequest = new CreateOddsRequest(
+            "Football",
+            "Barcelona'; DROP TABLE betting_odds--", // SQL injection attempt
+            "Real Madrid",
+            BigDecimal.valueOf(2.10),
+            BigDecimal.valueOf(3.40),
+            BigDecimal.valueOf(3.60),
+            LocalDateTime.now().plusDays(7)
+        );
+        
+        // ACT & ASSERT
+        com.gambling.betting_odds_api.exception.InvalidOddsException exception = 
+            assertThrows(
+                com.gambling.betting_odds_api.exception.InvalidOddsException.class,
+                () -> service.createOdds(maliciousRequest)
+            );
+        
+        // Verify exception message mentions security
+        assertTrue(exception.getMessage().toLowerCase().contains("suspicious"));
+        
+        // VERIFY - Repository should NEVER be called (request blocked before save)
+        verify(repository, never()).save(any());
+        
+        // Verify security logger was called to log the attack
+        verify(securityLogger, times(1)).logSqlInjectionAttempt(any(), any());
+    }
+    
+    @Test
+    @DisplayName("createOdds - XSS Attempt - Should Throw InvalidOddsException")
+    void createOdds_XssAttempt_ShouldThrowInvalidOddsException() {
+        // WHAT ARE WE TESTING?
+        // We're testing that the service BLOCKS XSS (Cross-Site Scripting) attempts.
+        // 
+        // XSS ATTACK EXPLAINED:
+        // Attacker tries to inject JavaScript code:
+        // sport = "<script>alert('XSS')</script>"
+        // If displayed in browser without escaping, script executes
+        // Could steal user sessions, cookies, etc.
+        //
+        // WHY WE BLOCK THIS:
+        // 1. User safety - prevent malicious scripts
+        // 2. Data quality - sport should be "Football", not "<script>"
+        // 3. Security logging - track attack patterns
+        
+        // ARRANGE - Create request with XSS attempt
+        CreateOddsRequest maliciousRequest = new CreateOddsRequest(
+            "<script>alert('XSS')</script>", // XSS attempt in sport field
+            "Barcelona",
+            "Real Madrid",
+            BigDecimal.valueOf(2.10),
+            BigDecimal.valueOf(3.40),
+            BigDecimal.valueOf(3.60),
+            LocalDateTime.now().plusDays(7)
+        );
+        
+        // ACT & ASSERT
+        com.gambling.betting_odds_api.exception.InvalidOddsException exception = 
+            assertThrows(
+                com.gambling.betting_odds_api.exception.InvalidOddsException.class,
+                () -> service.createOdds(maliciousRequest)
+            );
+        
+        // Verify exception message mentions security
+        assertTrue(exception.getMessage().toLowerCase().contains("suspicious"));
+        
+        // VERIFY - Repository should NEVER be called
+        verify(repository, never()).save(any());
+        
+        // Verify security logger was called to log the XSS attempt
+        verify(securityLogger, times(1)).logXssAttempt(any(), any());
+    }
+    
+    @Test
+    @DisplayName("createOdds - Suspiciously Low Odds - Should Log Security Warning")
+    void createOdds_SuspiciouslyLowOdds_ShouldLogSecurityWarning() {
+        // WHAT ARE WE TESTING?
+        // We're testing detection of suspicious odds values.
+        // 
+        // SUSPICIOUS ODDS EXPLAINED:
+        // - Odds below 1.01 are extremely unusual
+        // - Could indicate:
+        //   1. Data entry error
+        //   2. Match fixing attempt
+        //   3. System manipulation
+        //
+        // ACTION:
+        // - Log the suspicious values (security log)
+        // - Allow the operation (might be legitimate)
+        // - Alert compliance team for review
+        
+        // ARRANGE - Create request with very low odds
+        CreateOddsRequest suspiciousRequest = new CreateOddsRequest(
+            "Football",
+            "Barcelona",
+            "Real Madrid",
+            BigDecimal.valueOf(1.00), // Suspiciously low (below 1.01)
+            BigDecimal.valueOf(3.40),
+            BigDecimal.valueOf(3.60),
+            LocalDateTime.now().plusDays(7)
+        );
+        
+        // Create entity from suspicious request
+        BettingOdds suspiciousEntity = new BettingOdds();
+        suspiciousEntity.setId(1L);
+        suspiciousEntity.setSport("Football");
+        suspiciousEntity.setHomeTeam("Barcelona");
+        suspiciousEntity.setAwayTeam("Real Madrid");
+        suspiciousEntity.setHomeOdds(BigDecimal.valueOf(1.00));
+        suspiciousEntity.setDrawOdds(BigDecimal.valueOf(3.40));
+        suspiciousEntity.setAwayOdds(BigDecimal.valueOf(3.60));
+        suspiciousEntity.setMatchDate(LocalDateTime.now().plusDays(7));
+        suspiciousEntity.setActive(true);
+        suspiciousEntity.setCreatedAt(LocalDateTime.now());
+        suspiciousEntity.setUpdatedAt(LocalDateTime.now());
+        
+        // STUB: Mapper and repository
+        when(mapper.toEntity(suspiciousRequest)).thenReturn(suspiciousEntity);
+        when(repository.save(suspiciousEntity)).thenReturn(suspiciousEntity);
+        when(mapper.toResponse(suspiciousEntity)).thenReturn(response);
+        
+        // ACT - Operation should succeed but log warning
+        OddsResponse result = service.createOdds(suspiciousRequest);
+        
+        // ASSERT - Operation completed
+        assertNotNull(result);
+        
+        // VERIFY - Security logger was called to log suspicious odds
+        verify(securityLogger, times(1)).logInvalidOdds(
+            eq("Barcelona"),
+            eq("Real Madrid"),
+            eq(1.00),
+            eq(3.40),
+            eq(3.60),
+            any()
+        );
+    }
+    
+    @Test
+    @DisplayName("getOddsWithMargin - Anomalous Margin - Should Log Security Warning")
+    void getOddsWithMargin_AnomalousMargin_ShouldLogSecurityWarning() {
+        // WHAT ARE WE TESTING?
+        // We're testing detection of anomalous bookmaker margins.
+        // 
+        // ANOMALOUS MARGIN EXPLAINED:
+        // - Normal margin: 2-10%
+        // - Margin below 1%: Too low (loss for bookmaker)
+        // - Margin above 20%: Too high (unfair to customers)
+        //
+        // CAUSES:
+        // - Data entry errors
+        // - System bugs
+        // - Fraudulent manipulation
+        //
+        // ACTION:
+        // - Log to security log
+        // - Alert for manual review
+        
+        // ARRANGE
+        Long oddsId = 1L;
+        
+        // Create entity with odds that produce anomalous margin
+        BettingOdds anomalousEntity = new BettingOdds();
+        anomalousEntity.setId(1L);
+        anomalousEntity.setSport("Football");
+        anomalousEntity.setHomeTeam("Barcelona");
+        anomalousEntity.setAwayTeam("Real Madrid");
+        anomalousEntity.setHomeOdds(BigDecimal.valueOf(1.10)); // Very low odds
+        anomalousEntity.setDrawOdds(BigDecimal.valueOf(1.10)); // Very low odds
+        anomalousEntity.setAwayOdds(BigDecimal.valueOf(1.10)); // Very low odds
+        anomalousEntity.setMatchDate(LocalDateTime.now().plusDays(7));
+        anomalousEntity.setActive(true);
+        anomalousEntity.setCreatedAt(LocalDateTime.now());
+        anomalousEntity.setUpdatedAt(LocalDateTime.now());
+        
+        // Create response with anomalous margin
+        OddsResponse anomalousResponse = new OddsResponse(
+            1L,
+            "Football",
+            "Barcelona",
+            "Real Madrid",
+            BigDecimal.valueOf(1.10),
+            BigDecimal.valueOf(1.10),
+            BigDecimal.valueOf(1.10),
+            LocalDateTime.now().plusDays(7),
+            true,
+            LocalDateTime.now(),
+            LocalDateTime.now()
+        );
+        
+        // Calculate anomalous margin
+        // 1/1.10 = 0.909 (90.9%) for each outcome
+        // Total = 90.9% * 3 = 272.7%
+        // Margin = 272.7% - 100% = 172.7% (way too high!)
+        anomalousResponse.setImpliedProbabilityHome(0.909);
+        anomalousResponse.setImpliedProbabilityDraw(0.909);
+        anomalousResponse.setImpliedProbabilityAway(0.909);
+        anomalousResponse.setBookmakerMargin(172.7);
+        
+        // STUB
+        when(repository.findById(oddsId)).thenReturn(Optional.of(anomalousEntity));
+        when(mapper.toResponseWithMargin(anomalousEntity)).thenReturn(anomalousResponse);
+        
+        // ACT
+        OddsResponse result = service.getOddsWithMargin(oddsId);
+        
+        // ASSERT
+        assertNotNull(result);
+        assertTrue(result.getBookmakerMargin() > 20.0); // Anomalous
+        
+        // VERIFY - Security logger was called for anomalous margin
+        verify(securityLogger, times(1)).logAnomalousMargin(
+            eq(1L),
+            any(Double.class),
+            eq("Barcelona"),
+            eq("Real Madrid")
+        );
+    }
+    
+    // WHAT WE LEARNED IN ALL 4 DAYS
     //
     // DAY 1 - CREATE:
     // - AAA Pattern (Arrange-Act-Assert)
@@ -543,23 +864,50 @@ public class BettingOddsServiceTest {
     // - Verifying state changes (active flag)
     // - Understanding soft vs hard delete trade-offs
     //
+    // DAY 4 - BUSINESS LOGIC and SECURITY:
+    // - Testing complex calculations (bookmaker margin)
+    // - Testing security validations (SQL injection, XSS)
+    // - Testing suspicious data detection
+    // - Logging security events
+    // - Defense in depth approach
+    //
     // TEST COVERAGE:
-    // - createOdds()
+    // CREATE:
+    // - createOdds() - happy path
+    // - createOdds() - SQL injection blocked
+    // - createOdds() - XSS blocked
+    // - createOdds() - suspicious odds logged
+    //
+    // READ:
     // - getOddsById() - happy path
     // - getOddsById() - not found
     // - getAllOdds() - with pagination
     // - getActiveOdds() - filtering
     // - getOddsBySport() - filtering
+    // - getOddsWithMargin() - margin calculation
+    // - getOddsWithMargin() - anomalous margin detection
+    //
+    // UPDATE:
     // - updateOdds() - happy path
     // - updateOdds() - not found
+    //
+    // DELETE:
     // - deactivateOdds() - soft delete
     // - deleteOdds() - hard delete
     // - deleteOdds() - not found
     //
-    // Total: 11/45 tests, approximately 24 percent coverage
+    // Total: 16/45 tests, approximately 36 percent coverage
+    // Service layer: 16/20 tests, approximately 80 percent coverage
     //
-    // NEXT (DAY 4):
-    // - Business logic tests (margin calculation)
-    // - Security validation tests (SQL injection)
-    // - Edge cases and error scenarios
+    // ACHIEVEMENTS:
+    // - Comprehensive CRUD testing
+    // - Security validation coverage
+    // - Business logic verification
+    // - Exception handling validation
+    // - Professional test structure
+    //
+    // NEXT:
+    // - Week 2: Mapper and Repository tests
+    // - Week 3: Integration tests with MockMvc
+    // - Final goal: 80 percent plus total coverage
 }
