@@ -7,7 +7,7 @@ A production-ready RESTful API for managing betting odds for sports matches, bui
 Phase 1: Core CRUD API              ✅ COMPLETE
 Phase 2.1: Production Logging       ✅ COMPLETE
 Phase 2.2: Unit & Integration Tests ✅ COMPLETE (46/50 tests, 92% coverage)
-Phase 3: Security & Authentication  📋 PLANNED
+Phase 3: Security & Authentication  🔐 IN PROGRESS (Week 1/4)
 Phase 4: Performance & Reliability  📋 PLANNED  
 Phase 5: Microservices & Gateway    🚀 FUTURE
 Phase 6: Cloud Deployment           ☁️ ADVANCED
@@ -369,42 +369,189 @@ logs/
 
 ---
 
-### Phase 3: Security & Authentication 🔐 **PLANNED**
+### Phase 3: Security & Authentication 🔐 **IN PROGRESS**
 **Duration:** 3-4 weeks | **Complexity:** ⭐⭐⭐⭐ Advanced
+
+**Current Progress: Week 1/4 - Foundation Setup** ✅
 
 **Prerequisites:**
 - Understanding of authentication/authorization concepts
 - Basic cryptography knowledge (hashing, JWT)
 - REST API security best practices
 
-#### 3.1 Spring Security Implementation
-- [ ] Spring Security dependency
-- [ ] Security configuration class
-- [ ] Password encoding (BCrypt)
-- [ ] Authentication manager
-- [ ] Security filter chain
-- [ ] CORS configuration
-- [ ] CSRF protection
+#### 📅 Week 1: Spring Security Setup (Days 1-3) ✅ **COMPLETE**
 
-#### 3.2 JWT Token Authentication
-- [ ] JWT library (jjwt) integration
+**Goal:** Set up Spring Security framework and user management foundation
+
+**Progress:**
+- [x] Day 1: Add Spring Security and JWT dependencies ✅
+  - Added `spring-boot-starter-security` (3.5.6)
+  - Added JWT libraries (`jjwt-api`, `jjwt-impl`, `jjwt-jackson` 0.12.6)
+  - Added `spring-security-test` for testing
+  - Created temporary `SecurityConfig` with `permitAll()` for all endpoints
+  - Configured stateless session management (JWT preparation)
+  - Disabled CSRF (not needed for token-based auth)
+  - All 43 tests passing ✅
+
+- [x] Day 2: Create User entity and Role enum ✅
+  - Created `Role` enum (USER, BOOKMAKER, ADMIN)
+  - Created `User` entity with:
+    - Basic fields (id, username, email, password)
+    - Role-based access control field
+    - Soft delete support (active flag)
+    - Audit timestamps (createdAt, updatedAt with @PrePersist/@PreUpdate)
+  - Created `UserRepository` with custom query methods:
+    - findByUsername()
+    - findByEmail()
+    - existsByUsername()
+    - existsByEmail()
+  - Configured `EnumType.STRING` for role storage
+  - Added unique constraints on username and email
+  - Database table `users` created successfully ✅
+
+- [x] Day 3: Add BCrypt password encoder ✅
+  - Added `BCryptPasswordEncoder` bean in SecurityConfig
+  - Created `TestController` for development testing
+    - POST /api/test/create-user - Create test users
+    - GET /api/test/users - List all users
+  - Successfully tested password hashing (60 character BCrypt hash)
+  - Verified User entity and UserRepository work correctly
+  - Created first test user in database ✅
+
+**What We Built:**
+```
+src/main/java/com/gambling/betting_odds_api/
+├── config/
+│   └── SecurityConfig.java          # Spring Security configuration (temporary)
+├── model/
+│   ├── Role.java                    # USER, BOOKMAKER, ADMIN enum
+│   └── User.java                    # User entity with BCrypt password
+├── repository/
+│   └── UserRepository.java          # User data access layer
+└── controller/
+    └── TestController.java          # Temporary testing endpoints (DELETE in Week 2)
+
+Database:
+└── users table (id, username, email, password, role, active, timestamps)
+```
+
+**Security Features Implemented:**
+- ✅ BCrypt password hashing (60 character hash with salt)
+- ✅ Stateless session management (JWT preparation)
+- ✅ CSRF disabled (token-based auth)
+- ✅ User entity with role-based access control
+- ✅ Soft delete support (active flag)
+- ✅ Unique constraints (username, email)
+- ✅ Audit timestamps (@PrePersist/@PreUpdate)
+
+**Testing Results:**
+```bash
+# Password hashing works
+Plain password: "secret123"
+BCrypt hash: "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"
+Hash length: 60 characters ✅
+
+# User creation works
+POST http://localhost:8080/api/test/create-user?username=john&password=secret123
+Response: 200 OK, user ID: 1 ✅
+
+# Database persistence works
+SELECT * FROM users;
+Result: 1 row (john, john@test.com, hashed_password, USER, true) ✅
+```
+
+#### 📅 Week 2: JWT Authentication (Days 4-7) 📋 **NEXT**
+
+**Goal:** Implement JWT token generation and validation
+
+**Planned Tasks:**
+- [ ] Day 4: Create JWT utility class
+  - Create `JwtTokenProvider` (generate, validate, extract claims)
+  - Add JWT configuration properties (secret, expiration)
+  - Test token generation and validation
+  
+- [ ] Day 5: Create authentication DTOs
+  - Create `LoginRequest` DTO (username, password)
+  - Create `RegisterRequest` DTO (username, email, password)
+  - Create `AuthResponse` DTO (token, username, role)
+  
+- [ ] Day 6: Create AuthService and AuthController
+  - Create `AuthService` (register, login logic)
+  - Create `AuthController` (register, login endpoints)
+  - Integrate BCrypt for password validation
+  
+- [ ] Day 7: Create JWT authentication filter
+  - Create `JwtAuthenticationFilter`
+  - Extract token from Authorization header
+  - Validate token and set authentication in SecurityContext
+  - Test JWT flow (register → login → get token → access endpoint)
+
+#### 📅 Week 3: Role-Based Access Control (Days 8-10) 📋 **PLANNED**
+
+**Goal:** Secure endpoints based on user roles
+
+**Planned Tasks:**
+- [ ] Day 8: Configure method security
+  - Enable `@EnableMethodSecurity`
+  - Add `@PreAuthorize` to endpoints
+  
+- [ ] Day 9: Implement role-based authorization
+  - USER: Read-only access (GET /api/odds)
+  - BOOKMAKER: Create/update odds (POST, PUT /api/odds)
+  - ADMIN: Full access including delete (DELETE /api/odds)
+  
+- [ ] Day 10: Test role-based access
+  - Test USER role (can only read)
+  - Test BOOKMAKER role (can create/update)
+  - Test ADMIN role (full access)
+
+#### 📅 Week 4: Testing & Documentation (Days 11-14) 📋 **PLANNED**
+
+**Goal:** Comprehensive security testing and documentation
+
+**Planned Tasks:**
+- [ ] Day 11-12: Security tests
+  - Test authentication (login with valid/invalid credentials)
+  - Test authorization (access endpoints with different roles)
+  - Test JWT validation (expired token, invalid token)
+  
+- [ ] Day 13: Integration tests with JWT
+  - Test complete flow (register → login → access protected endpoint)
+  - Test security filter chain
+  
+- [ ] Day 14: Documentation and cleanup
+  - Update README with authentication guide
+  - Update Swagger with security scheme
+  - Delete TestController
+  - Final review and commit
+
+#### 3.1 Spring Security Implementation ✅ **COMPLETE**
+- [x] Spring Security dependency
+- [x] Security configuration class
+- [x] Password encoding (BCrypt)
+- [ ] Authentication manager (Week 2)
+- [ ] Security filter chain (Week 2)
+- [x] CORS configuration (disabled CSRF)
+
+#### 3.2 JWT Token Authentication 📋 **Week 2**
+- [ ] JWT library (jjwt) integration ✅ (dependency added)
 - [ ] Token generation service
 - [ ] Token validation filter
 - [ ] Refresh token mechanism
 - [ ] Token expiration handling
 - [ ] Blacklist for revoked tokens
 
-#### 3.3 User Management
-- [ ] User entity (username, email, password, roles)
-- [ ] User repository
+#### 3.3 User Management ✅ **FOUNDATION COMPLETE**
+- [x] User entity (username, email, password, roles)
+- [x] User repository
 - [ ] User service (CRUD operations)
-- [ ] Registration endpoint
-- [ ] Login endpoint (returns JWT)
+- [ ] Registration endpoint (Week 2)
+- [ ] Login endpoint (returns JWT) (Week 2)
 - [ ] Logout endpoint
 - [ ] Password reset functionality
 
-#### 3.4 Role-Based Access Control (RBAC)
-- [ ] Role enum (USER, ADMIN, BOOKMAKER)
+#### 3.4 Role-Based Access Control (RBAC) 📋 **Week 3**
+- [x] Role enum (USER, ADMIN, BOOKMAKER) ✅
 - [ ] Method-level security (`@PreAuthorize`)
 - [ ] Endpoint-level authorization
 - [ ] Custom authorization logic
@@ -422,7 +569,7 @@ PUT /api/odds/{id} - Allowed
 DELETE /api/odds/{id} - Allowed
 ```
 
-#### 3.5 Rate Limiting
+#### 3.5 Rate Limiting 📋 **Phase 4**
 - [ ] Rate limiting interceptor
 - [ ] In-memory rate limiter (Bucket4j)
 - [ ] Per-user rate limits
@@ -430,12 +577,14 @@ DELETE /api/odds/{id} - Allowed
 - [ ] Rate limit headers (X-RateLimit-*)
 
 **Key Learning Outcomes:**
-- Authentication vs Authorization
-- JWT token structure and validation
-- Spring Security architecture
-- Password security best practices
-- API security patterns
-
+- ✅ Spring Security architecture and configuration
+- ✅ Password security best practices (BCrypt hashing)
+- ✅ Stateless authentication (JWT preparation)
+- ✅ User entity design and repository pattern
+- ✅ Enum-based role management
+- 📋 JWT token structure and validation (Week 2)
+- 📋 Authentication vs Authorization (Week 2-3)
+- 📋 API security patterns (Week 3-4)
 ---
 
 ### Phase 4: Performance & Reliability ⚡ **PLANNED**
@@ -742,6 +891,30 @@ GET /api/odds?page=1&size=20&sort=sport,asc&sort=homeOdds,desc
 | `created_at` | TIMESTAMP | NOT NULL | Record creation timestamp |
 | `updated_at` | TIMESTAMP | - | Record update timestamp |
 
+### `users` Table
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | BIGSERIAL | PRIMARY KEY | Unique identifier |
+| `username` | VARCHAR(50) | NOT NULL, UNIQUE | User's login name |
+| `email` | VARCHAR(100) | NOT NULL, UNIQUE | User's email address |
+| `password` | VARCHAR(255) | NOT NULL | BCrypt hashed password (60 chars) |
+| `role` | VARCHAR(20) | NOT NULL | User role (USER, BOOKMAKER, ADMIN) |
+| `active` | BOOLEAN | NOT NULL, DEFAULT true | Account status (soft delete) |
+| `created_at` | TIMESTAMP | NOT NULL | Account creation timestamp |
+| `updated_at` | TIMESTAMP | NOT NULL | Last update timestamp |
+
+**Indexes:**
+- `users_pkey` PRIMARY KEY on `id`
+- `uk_username` UNIQUE CONSTRAINT on `username`
+- `uk_email` UNIQUE CONSTRAINT on `email`
+
+**Security Features:**
+- Passwords stored as BCrypt hash (never plain text)
+- Unique username and email (prevent duplicates)
+- Soft delete with `active` flag (preserve audit trail)
+- Automatic timestamps with @PrePersist/@PreUpdate
+
 ### Indexes
 - `idx_sport_active` ON `betting_odds(sport, active)` - Fast filtering by sport
 - `idx_match_date` ON `betting_odds(match_date)` - Fast date queries
@@ -889,7 +1062,23 @@ Content-Type: application/json
 [SECURITY] 2025-01-15 14:28:45 - XSS attempt detected in sport field: "<script>alert('xss')</script>"
 [SECURITY] 2025-01-15 14:30:22 - Suspicious input blocked: Multiple SQL keywords detected
 ```
+### Development Testing Endpoints (Temporary)
 
+⚠️ **WARNING:** These endpoints are for Phase 3 development only and will be removed in Week 2!
+
+| Method | Endpoint | Description | Status |
+|--------|----------|-------------|--------|
+| POST | `/api/test/create-user?username=X&password=Y` | Create test user | 🔧 Dev Only |
+| GET | `/api/test/users` | List all users | 🔧 Dev Only |
+
+**Example:**
+```bash
+# Create test user
+POST http://localhost:8080/api/test/create-user?username=john&password=secret123
+
+# List all users
+GET http://localhost:8080/api/test/users
+```
 ---
 
 ## 💡 Business Logic Example
