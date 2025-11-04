@@ -3,11 +3,10 @@
 A production-ready RESTful API for managing betting odds for sports matches, built with Spring Boot and PostgreSQL.
 
 ## 📊 Project Status
-
 ```
 Phase 1: Core CRUD API              ✅ COMPLETE
 Phase 2.1: Production Logging       ✅ COMPLETE
-Phase 2.2: Unit & Integration Tests 🔄 IN PROGRESS (Week 2 Started: 24/50 tests)
+Phase 2.2: Unit & Integration Tests 🔄 IN PROGRESS (Week 2 Day 10-11: 34/50 tests)
 Phase 3: Security & Authentication  📋 PLANNED
 Phase 4: Performance & Reliability  📋 PLANNED  
 Phase 5: Microservices & Gateway    🚀 FUTURE
@@ -34,7 +33,6 @@ This is a comprehensive **learning project** demonstrating professional backend 
 ## 🏗️ Architecture Evolution
 
 ### Current: Monolithic Architecture (Phase 1-2)
-
 ```
 ┌─────────────────────────────────────────────┐
 │         CLIENT (Browser/Postman)             │
@@ -85,7 +83,6 @@ This is a comprehensive **learning project** demonstrating professional backend 
 ```
 
 ### Future: Microservices Architecture (Phase 5+)
-
 ```
 ┌─────────────────────────────────────────────┐
 │              CLIENT (Browser/Mobile)         │
@@ -135,8 +132,13 @@ This is a comprehensive **learning project** demonstrating professional backend 
 - **Springdoc OpenAPI 2.8.8** - Swagger/OpenAPI documentation
 - **Lombok** - Reduce boilerplate code
 
+### Testing Tools
+- **JUnit 5** - Unit testing framework ✅ **IN USE**
+- **Mockito** - Mocking framework ✅ **IN USE**
+- **@DataJpaTest** - Repository integration tests ✅ **IN USE**
+- **H2 Database** - In-memory database for tests ✅ **IN USE**
+
 ### Future Technologies
-- **JUnit 5 + Mockito** - Unit & Integration testing 📋 *Phase 2.2*
 - **Spring Security** - Authentication & Authorization 🔐 *Phase 3*
 - **JWT (jjwt)** - Token-based authentication 🔐 *Phase 3*
 - **Redis** - Caching layer ⚡ *Phase 4*
@@ -280,7 +282,7 @@ logs/
 [SECURITY] 2025-01-15 14:25:12 - Transaction rolled back due to security violation
 ```
 
-#### 2.2 Unit & Integration Tests 🔄 **IN PROGRESS - Day 1**
+#### 2.2 Unit & Integration Tests 🔄 **IN PROGRESS - Week 2 Day 10-11**
 
 **Goal:** Achieve 80%+ test coverage with professional testing practices
 
@@ -294,15 +296,28 @@ logs/
 
 **Week 1 Summary:**
 - 16 unit tests for BettingOddsService
-- Approximately 80 percent Service layer coverage
+- Approximately 80% Service layer coverage
 - All CRUD operations tested
 - Security validations tested
 - Business logic verified
 
 📅 **Week 2: Mapper & Repository Tests (Days 5-11)**
 - [x] Day 5-6: Mapper tests (DTO to Entity, Entity to DTO conversions) ✅ DONE
-- [ ] Day 7-9: Repository tests (@DataJpaTest)
-- [ ] Day 10-11: Custom query tests + Pagination tests
+- [x] Day 7-9: Repository tests (@DataJpaTest) ✅ DONE
+- [ ] Day 10-11: Controller integration tests (@SpringBootTest + MockMvc)
+
+**Week 2 Days 5-6 Summary:**
+- 8 unit tests for OddsMapper
+- 100% Mapper coverage
+- All DTO ↔ Entity conversions tested
+- Margin calculations verified
+
+**Week 2 Days 7-9 Summary:**
+- 10 integration tests for BettingOddsRepository
+- 100% Repository coverage
+- Tested against real H2 in-memory database
+- All custom queries verified (@Query annotations)
+- Pagination, sorting, and date filtering tested
 
 📅 **Week 3: Integration Tests (Days 15-21)**
 - [ ] Day 15-17: Controller integration tests (@SpringBootTest + MockMvc)
@@ -315,30 +330,23 @@ logs/
 |-----------|--------------|----------|--------|
 | **BettingOddsService** | 16/20 | ~80% | ✅ Week 1 Complete |
 | **OddsMapper** | 8/8 | ~100% | ✅ Week 2 Day 5-6 Complete |
-| BettingOddsRepository | 0/10 | 0% | ⏳ Week 2 Day 7-9 Next |
-| BettingOddsController | 0/12 | 0% | ⏳ Week 3 |
-| **TOTAL** | **24/50** | **~48%** | 🎯 **Target: 80%+** |
+| **BettingOddsRepository** | 10/10 | ~100% | ✅ Week 2 Day 7-9 Complete |
+| BettingOddsController | 0/12 | 0% | ⏳ Week 3 Next |
+| **TOTAL** | **34/50** | **~68%** | 🎯 **Target: 80%+** |
 
 **What We're Learning:**
 - ✅ JUnit 5 basics (test structure, assertions)
 - ✅ Mockito fundamentals (mocking dependencies)
 - ✅ AAA pattern (Arrange-Act-Assert)
 - ✅ Test naming conventions
-- 📋 @DataJpaTest for repository testing
+- ✅ @DataJpaTest for repository testing
+- ✅ H2 in-memory database for integration tests
+- ✅ Testing pagination and sorting
+- ✅ Testing custom @Query methods
 - 📋 @SpringBootTest for integration testing
 - 📋 MockMvc for HTTP endpoint testing
 
 ---
-
-#### 2.2 Unit & Integration Tests 📋 **NEXT UP!**
-- [ ] JUnit 5 setup
-- [ ] Mockito for mocking
-- [ ] Unit tests for Service layer
-- [ ] Unit tests for Mapper
-- [ ] Integration tests for Repository
-- [ ] Integration tests for REST endpoints
-- [ ] Test coverage > 80%
-- [ ] Test documentation
 
 #### 2.3 Advanced Search & Filtering 📋 *Planned*
 - [ ] Specification pattern (dynamic queries)
@@ -875,7 +883,6 @@ Content-Type: application/json
 ## 💡 Business Logic Example
 
 ### Bookmaker Margin Calculation
-
 ```
 Given odds:
 - Home win: 2.10
@@ -913,6 +920,8 @@ Bookmaker Margin: 104.8% - 100% = 4.8%
 - ✅ Clean Code (Naming, SOLID principles)
 - ✅ **Production Logging** (Audit, Performance, Security)
 - ✅ **Security Validation** (SQL injection, XSS prevention)
+- ✅ **Unit Testing** (JUnit 5, Mockito, AAA pattern)
+- ✅ **Integration Testing** (@DataJpaTest, H2 database)
 
 ### Domain Knowledge
 - ✅ Gambling industry concepts (odds formats, margins)
@@ -930,7 +939,10 @@ Bookmaker Margin: 104.8% - 100% = 4.8%
 - ✅ Git version control
 - ✅ **Logback** (enterprise logging)
 - ✅ **Security patterns** (input validation, attack detection)
-- 📋 JUnit 5 + Mockito - *Next Up*
+- ✅ **JUnit 5 + Mockito** (unit testing)
+- ✅ **@DataJpaTest** (integration testing)
+- ✅ **H2 Database** (in-memory testing)
+- 📋 **MockMvc** (REST API testing) - *Next Up*
 - 📋 Spring Security - *Planned*
 - 🚀 Microservices architecture - *Future*
 
@@ -1012,10 +1024,10 @@ If you have questions about the project or want to discuss implementation detail
 
 ## 🎯 What's Next?
 
-### Immediate Next Steps (Phase 2.2)
-1. **Unit Tests** - Test Service layer business logic
-2. **Integration Tests** - Test REST endpoints end-to-end
-3. **Test Coverage** - Achieve >80% code coverage
+### Immediate Next Steps (Phase 2.2 - Week 2 Day 10-11)
+1. **Controller Integration Tests** - Test REST endpoints with MockMvc
+2. **End-to-end HTTP Tests** - Full request/response cycle
+3. **Test Coverage Report** - Verify 80%+ coverage
 4. **Test Documentation** - Document test strategies
 
 ### After Testing (Phase 3)
@@ -1032,10 +1044,11 @@ If you have questions about the project or want to discuss implementation detail
 
 ## 📊 Project Statistics
 
-- **Lines of Code**: ~2,000 (Java + XML)
-- **Total Commits**: 20+
-- **Features Completed**: Core CRUD + Logging System
-- **Test Coverage**: 0% (Phase 2.2 upcoming)
+- **Lines of Code**: ~3,500 (Java + XML + Properties)
+- **Total Commits**: 25+
+- **Features Completed**: Core CRUD + Logging System + Testing Framework
+- **Test Coverage**: ~68% (34/50 tests)
 - **API Endpoints**: 10
 - **Database Tables**: 1 (odds)
 - **Log Files**: 5 (application, errors, audit, performance, security)
+- **Test Files**: 3 (Service, Mapper, Repository)
