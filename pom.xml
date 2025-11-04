@@ -175,28 +175,60 @@
         </dependency>
         
         <!-- ───────────────────────────────────────────────────────────────────────
-             FUTURE DEPENDENCIES (Phase 3+)
-             ───────────────────────────────────────────────────────────────────────
-             Uncomment when needed:
-             
-             Phase 3 - Security:
-             <dependency>
-                 <groupId>org.springframework.boot</groupId>
-                 <artifactId>spring-boot-starter-security</artifactId>
-             </dependency>
-             
-             <dependency>
-                 <groupId>io.jsonwebtoken</groupId>
-                 <artifactId>jjwt-api</artifactId>
-                 <version>0.12.3</version>
-             </dependency>
-             
-             Phase 4 - Caching:
-             <dependency>
-                 <groupId>org.springframework.boot</groupId>
-                 <artifactId>spring-boot-starter-data-redis</artifactId>
-             </dependency>
-        -->
+			SECURITY - Phase 3
+			───────────────────────────────────────────────────────────────────────
+		-->
+
+		<!-- Spring Security - Authentication & Authorization -->
+		<!-- Provides: Security filters, authentication, authorization, CSRF protection -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+
+		<!-- JWT (JSON Web Tokens) - Token-based authentication -->
+		<!-- API: Create and parse JWT tokens -->
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-api</artifactId>
+			<version>0.12.6</version>
+		</dependency>
+
+		<!-- JWT Implementation - Runtime library -->
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-impl</artifactId>
+			<version>0.12.6</version>
+			<scope>runtime</scope>
+		</dependency>
+
+		<!-- JWT Jackson Support - JSON serialization for tokens -->
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-jackson</artifactId>
+			<version>0.12.6</version>
+			<scope>runtime</scope>
+		</dependency>
+
+		<!-- Spring Security Test - Security testing utilities -->
+		<!-- Provides: @WithMockUser, SecurityMockMvcRequestPostProcessors -->
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- ───────────────────────────────────────────────────────────────────────
+			FUTURE DEPENDENCIES (Phase 4+)
+			───────────────────────────────────────────────────────────────────────
+			Uncomment when needed:
+			
+			Phase 4 - Caching:
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-starter-data-redis</artifactId>
+			</dependency>
+		-->
         
     </dependencies>
     
