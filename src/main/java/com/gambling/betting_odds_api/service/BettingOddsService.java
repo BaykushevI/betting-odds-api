@@ -521,7 +521,12 @@ public class BettingOddsService {
      * Validate odds for security issues.
      */
     private void validateOddsForSecurity(CreateOddsRequest request) {
-        // Check for SQL injection patterns in ALL string fields
+        // Check for XSS patterns FIRST (more specific patterns)
+        checkForXss("sport", request.getSport());
+        checkForXss("homeTeam", request.getHomeTeam());
+        checkForXss("awayTeam", request.getAwayTeam());
+        
+        // Check for SQL injection patterns SECOND (broader patterns)
         checkForSqlInjection("sport", request.getSport());
         checkForSqlInjection("homeTeam", request.getHomeTeam());
         checkForSqlInjection("awayTeam", request.getAwayTeam());
@@ -600,12 +605,33 @@ public class BettingOddsService {
                 String.format("Suspicious input detected in %s field. Request rejected for security reasons.", fieldName)
             );
         }
+    }
+    
+    /**
+     * Check single field for XSS (Cross-Site Scripting) patterns.
+     * 
+     * WHY BLOCK XSS:
+     * - Prevent malicious scripts from being stored in database
+     * - Protect frontend from script injection attacks
+     * - Maintain data integrity
+     * 
+     * HOW IT WORKS:
+     * - Check for common XSS patterns (<script>, <iframe>, javascript:, etc.)
+     * - Log the attempt in security.log
+     * - Throw InvalidOddsException to reject the request
+     */
+    private void checkForXss(String fieldName, String value) {
+        if (value == null) return;
+        
+        String lower = value.toLowerCase();
         
         // Check for XSS patterns
         if (lower.contains("<script") ||
             lower.contains("<iframe") ||
             lower.contains("javascript:") ||
-            lower.contains("onerror=")) {
+            lower.contains("onerror=") ||
+            lower.contains("onload=") ||
+            lower.contains("onclick=")) {
             
             // Log the attempt
             log.warn("XSS attempt detected in field {}: {}", fieldName, value);

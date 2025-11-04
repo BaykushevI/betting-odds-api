@@ -7,7 +7,7 @@ A production-ready RESTful API for managing betting odds for sports matches, bui
 ```
 Phase 1: Core CRUD API              ✅ COMPLETE
 Phase 2.1: Production Logging       ✅ COMPLETE
-Phase 2.2: Unit & Integration Tests 🔄 IN PROGRESS (Week 1 DONE: 16/45 tests)
+Phase 2.2: Unit & Integration Tests 🔄 IN PROGRESS (Week 2 Started: 24/50 tests)
 Phase 3: Security & Authentication  📋 PLANNED
 Phase 4: Performance & Reliability  📋 PLANNED  
 Phase 5: Microservices & Gateway    🚀 FUTURE
@@ -299,10 +299,10 @@ logs/
 - Security validations tested
 - Business logic verified
 
-📅 **Week 2: Mapper & Repository Tests (Days 8-14)**
-- [ ] Day 8-9: Mapper tests (DTO ↔ Entity conversion)
-- [ ] Day 10-11: Repository tests (@DataJpaTest)
-- [ ] Day 12-14: Custom query tests + Pagination tests
+📅 **Week 2: Mapper & Repository Tests (Days 5-11)**
+- [x] Day 5-6: Mapper tests (DTO to Entity, Entity to DTO conversions) ✅ DONE
+- [ ] Day 7-9: Repository tests (@DataJpaTest)
+- [ ] Day 10-11: Custom query tests + Pagination tests
 
 📅 **Week 3: Integration Tests (Days 15-21)**
 - [ ] Day 15-17: Controller integration tests (@SpringBootTest + MockMvc)
@@ -314,10 +314,10 @@ logs/
 | Component | Tests Written | Coverage | Status |
 |-----------|--------------|----------|--------|
 | **BettingOddsService** | 16/20 | ~80% | ✅ Week 1 Complete |
-| OddsMapper | 0/8 | 0% | ⏳ Week 2 Next |
-| BettingOddsRepository | 0/10 | 0% | ⏳ Week 2 |
+| **OddsMapper** | 8/8 | ~100% | ✅ Week 2 Day 5-6 Complete |
+| BettingOddsRepository | 0/10 | 0% | ⏳ Week 2 Day 7-9 Next |
 | BettingOddsController | 0/12 | 0% | ⏳ Week 3 |
-| **TOTAL** | **16/50** | **~32%** | 🎯 **Target: 80%+** |
+| **TOTAL** | **24/50** | **~48%** | 🎯 **Target: 80%+** |
 
 **What We're Learning:**
 - ✅ JUnit 5 basics (test structure, assertions)
