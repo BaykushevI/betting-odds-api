@@ -7,7 +7,7 @@ A production-ready RESTful API for managing betting odds for sports matches, bui
 Phase 1: Core CRUD API              ✅ COMPLETE
 Phase 2.1: Production Logging       ✅ COMPLETE
 Phase 2.2: Unit & Integration Tests ✅ COMPLETE (46/50 tests, 92% coverage)
-Phase 3: Security & Authentication  🔐 IN PROGRESS (Week 1/4)
+Phase 3: Security & Authentication  🔐 IN PROGRESS (Week 2/4 - Days 6-7 COMPLETE)
 Phase 4: Performance & Reliability  📋 PLANNED  
 Phase 5: Microservices & Gateway    🚀 FUTURE
 Phase 6: Cloud Deployment           ☁️ ADVANCED
@@ -17,7 +17,7 @@ Phase 6: Cloud Deployment           ☁️ ADVANCED
 
 ## 📖 Project Overview
 
-This is a comprehensive **learning project** demonstrating professional backend development practices relevant to the **gambling industry**. It implements a complete CRUD API with proper architectural patterns, validation, error handling, business logic, and **enterprise-grade logging**.
+This is a comprehensive **learning project** demonstrating professional backend development practices relevant to the **gambling industry**. It implements a complete CRUD API with proper architectural patterns, validation, error handling, business logic, **enterprise-grade logging**, and **JWT authentication**.
 
 ### 🎯 Learning Goals
 
@@ -25,6 +25,7 @@ This is a comprehensive **learning project** demonstrating professional backend 
 - ✅ Understand production-ready development practices
 - ✅ Learn gambling industry domain concepts (odds, margins, probabilities)
 - ✅ **Implement professional logging for compliance and debugging**
+- ✅ **Implement JWT-based authentication and authorization**
 - ✅ Progress from monolith to microservices architecture
 - ✅ Implement enterprise-level features (logging, security, monitoring)
 
@@ -32,21 +33,33 @@ This is a comprehensive **learning project** demonstrating professional backend 
 
 ## 🏗️ Architecture Evolution
 
-### Current: Monolithic Architecture (Phase 1-2)
+### Current: Monolithic Architecture with JWT Authentication (Phase 1-3)
 ```
 ┌─────────────────────────────────────────────┐
 │         CLIENT (Browser/Postman)             │
 └──────────────────┬──────────────────────────┘
                    │ HTTP/JSON
+                   │ Authorization: Bearer <JWT>
                    ↓
 ┌─────────────────────────────────────────────┐
 │          SPRING BOOT APPLICATION             │
+│  ┌────────────────────────────────────────┐ │
+│  │   SECURITY FILTER CHAIN                │ │
+│  │   - JwtAuthenticationFilter            │ │
+│  │   - Extract & validate JWT token       │ │
+│  │   - Load user from database            │ │
+│  │   - Set SecurityContext                │ │
+│  └─────────────────┬──────────────────────┘ │
+│                    ↓                         │
 │  ┌────────────────────────────────────────┐ │
 │  │   CONTROLLER LAYER                     │ │
 │  │   - REST endpoints                     │ │
 │  │   - Request validation (@Valid)        │ │
 │  │   - DTOs (Request/Response)            │ │
 │  │   - HTTP request/response logging      │ │
+│  │   - Authentication endpoints           │ │
+│  │     POST /api/auth/register            │ │
+│  │     POST /api/auth/login               │ │
 │  └─────────────────┬──────────────────────┘ │
 │                    ↓                         │
 │  ┌────────────────────────────────────────┐ │
@@ -57,18 +70,23 @@ This is a comprehensive **learning project** demonstrating professional backend 
 │  │   - Security validation (SQL injection)│ │
 │  │   - Audit logging (CREATE/UPDATE/DELETE)│
 │  │   - Performance logging (execution time)│
+│  │   - AuthService (register, login, JWT) │ │
+│  │   - Password hashing (BCrypt)          │ │
 │  └─────────────────┬──────────────────────┘ │
 │                    ↓                         │
 │  ┌────────────────────────────────────────┐ │
 │  │   REPOSITORY LAYER                     │ │
 │  │   - Spring Data JPA                    │ │
 │  │   - Database queries                   │ │
+│  │   - UserRepository (authentication)    │ │
+│  │   - BettingOddsRepository              │ │
 │  └─────────────────┬──────────────────────┘ │
 └────────────────────┼──────────────────────┘
                      ↓
          ┌──────────────────────┐
          │   PostgreSQL DB      │
          │   - betting_odds     │
+         │   - users            │
          └──────────────────────┘
                      │
                      ↓
@@ -123,8 +141,14 @@ This is a comprehensive **learning project** demonstrating professional backend 
 - **Spring Boot 3.5.6** - Framework
 - **Spring Data JPA** - Database access layer
 - **Spring Validation** - Bean validation (Jakarta Validation)
+- **Spring Security** - Authentication & Authorization ✅ **COMPLETE**
 - **PostgreSQL 18** - Relational Database
 - **Maven** - Build and dependency management
+
+### Security Stack
+- **Spring Security 6.x** - Security framework ✅ **IN USE**
+- **JWT (jjwt 0.12.6)** - JSON Web Tokens ✅ **IN USE**
+- **BCrypt** - Password hashing algorithm ✅ **IN USE**
 
 ### Production Tools
 - **Logback** - Advanced logging framework ✅ **COMPLETE**
@@ -139,8 +163,6 @@ This is a comprehensive **learning project** demonstrating professional backend 
 - **H2 Database** - In-memory database for tests ✅ **IN USE**
 
 ### Future Technologies
-- **Spring Security** - Authentication & Authorization 🔐 *Phase 3*
-- **JWT (jjwt)** - Token-based authentication 🔐 *Phase 3*
 - **Redis** - Caching layer ⚡ *Phase 4*
 - **Docker** - Containerization 🐳 *Phase 6*
 - **Spring Cloud Gateway** - API Gateway 🚪 *Phase 5*
@@ -148,7 +170,7 @@ This is a comprehensive **learning project** demonstrating professional backend 
 
 ---
 
-## ✨ Current Features (Phase 1-2 ✅)
+## ✨ Current Features (Phase 1-3 ✅)
 
 ### Core Functionality
 - ✅ Complete CRUD operations for betting odds
@@ -171,7 +193,7 @@ This is a comprehensive **learning project** demonstrating professional backend 
 - ✅ Swagger/OpenAPI interactive documentation
 - ✅ Spring Boot Actuator for monitoring and health checks
 
-### Production Logging System ✅ **NEW!**
+### Production Logging System ✅ **COMPLETE**
 - ✅ **5 specialized log files** with automatic rotation
   - Main application log (10MB rotation, 30 days retention)
   - Error-only log (separate critical errors)
@@ -196,6 +218,22 @@ This is a comprehensive **learning project** demonstrating professional backend 
 - ✅ **Async logging** for high performance
 - ✅ **Colored console output** (development)
 - ✅ **Structured logging** for analysis
+
+### Authentication & Authorization System ✅ **COMPLETE** (Week 2)
+- ✅ **JWT-based authentication** (stateless, token-based)
+- ✅ **User registration and login** (POST /api/auth/register, /api/auth/login)
+- ✅ **BCrypt password hashing** (60-character hash with salt)
+- ✅ **JWT token generation** (24-hour expiration)
+- ✅ **JWT token validation** (signature, expiration, username)
+- ✅ **Custom authentication filter** (JwtAuthenticationFilter)
+- ✅ **User details service** (CustomUserDetailsService)
+- ✅ **Role-based user model** (USER, BOOKMAKER, ADMIN)
+- ✅ **Protected endpoints** (/api/odds/** requires authentication)
+- ✅ **Public endpoints** (/api/auth/** no authentication required)
+- ✅ **Exception handling** (401 Unauthorized, 403 Forbidden)
+- ✅ **Security context management** (request-scoped authentication)
+- ✅ **Duplicate username/email prevention**
+- ✅ **Account status management** (active/inactive flag)
 
 ---
 
@@ -372,7 +410,7 @@ logs/
 ### Phase 3: Security & Authentication 🔐 **IN PROGRESS**
 **Duration:** 3-4 weeks | **Complexity:** ⭐⭐⭐⭐ Advanced
 
-**Current Progress: Week 1/4 - Foundation Setup** ✅
+**Current Progress: Week 2/4 - Days 6-7 COMPLETE** ✅
 
 **Prerequisites:**
 - Understanding of authentication/authorization concepts
@@ -422,26 +460,20 @@ logs/
 ```
 src/main/java/com/gambling/betting_odds_api/
 ├── config/
-│   └── SecurityConfig.java          # Spring Security configuration (temporary)
+│   └── SecurityConfig.java          # Spring Security configuration
 ├── model/
 │   ├── Role.java                    # USER, BOOKMAKER, ADMIN enum
 │   └── User.java                    # User entity with BCrypt password
 ├── repository/
 │   └── UserRepository.java          # User data access layer
-├── security/
-│   └── JwtTokenProvider.java        # JWT token generation and validation
-├── dto/
-│   ├── LoginRequest.java            # Login DTO (username, password)
-│   ├── RegisterRequest.java         # Register DTO (username, email, password)
-│   └── AuthResponse.java            # Auth response DTO (token, user info)
 └── controller/
-    └── TestController.java          # Temporary testing endpoints (DELETE in Week 2)
+    └── TestController.java          # Temporary testing endpoints (DELETED in Week 2)
 
 Database:
 └── users table (id, username, email, password, role, active, timestamps)
 
 Configuration:
-└── application.properties (jwt.secret, jwt.expiration, jwt.prefix)
+└── application.properties (basic Spring Security settings)
 ```
 
 **Security Features Implemented:**
@@ -469,9 +501,9 @@ SELECT * FROM users;
 Result: 1 row (john, john@test.com, hashed_password, USER, true) ✅
 ```
 
-#### 📅 Week 2: JWT Authentication (Days 4-7) 🔄 **IN PROGRESS**
+#### 📅 Week 2: JWT Authentication (Days 4-7) ✅ **COMPLETE**
 
-**Goal:** Implement JWT token generation and validation
+**Goal:** Implement complete JWT authentication flow
 
 **Progress:**
 - [x] Day 4: Create JWT utility class ✅
@@ -510,27 +542,144 @@ Result: 1 row (john, john@test.com, hashed_password, USER, true) ✅
   - Added comprehensive validation annotations
   - Documented authentication flow (register → login → authenticated request)
   
-- [ ] Day 6: Create AuthService and AuthController 📋 **NEXT**
-  - Create `AuthService` (register, login logic)
-  - Create `AuthController` (register, login endpoints)
-  - Integrate BCrypt for password validation
-  - Handle duplicate username/email errors
-  - Generate JWT token after successful auth
+- [x] Day 6: Create AuthService and AuthController ✅
+  - Created `AuthService` with register() and login() methods
+    - register(): username/email uniqueness check, BCrypt hashing, JWT generation
+    - login(): credential validation, password verification, JWT generation
+  - Created `AuthController` with REST endpoints
+    - POST /api/auth/register - User registration
+    - POST /api/auth/login - User login
+  - Added request validation with @Valid
+  - Implemented exception handling (400, 401, 500)
+  - Added logging for all operations
+  - Testing results:
+    - Registration: ✅ (user created, token returned)
+    - Login: ✅ (credentials validated, token returned)
+    - Duplicate username: ✅ (400 Bad Request)
+    - Duplicate email: ✅ (400 Bad Request)
+    - Wrong password: ✅ (401 Unauthorized)
+    - Non-existent user: ✅ (401 Unauthorized)
+    - JWT token validation: ✅ (jwt.io verified)
   
-- [ ] Day 7: Create JWT authentication filter 📋 **PLANNED**
-  - Create `JwtAuthenticationFilter`
-  - Extract token from Authorization header
-  - Validate token and set authentication in SecurityContext
-  - Test JWT flow (register → login → get token → access endpoint)
+- [x] Day 7: Create JWT authentication filter ✅
+  - Created `CustomUserDetailsService` implements UserDetailsService
+    - loadUserByUsername() - loads User from database
+    - Converts User entity to UserDetails
+    - Maps Role enum to GrantedAuthority (ROLE_USER, ROLE_ADMIN, etc.)
+    - Handles account status (active/inactive)
+  - Created `JwtAuthenticationFilter` extends OncePerRequestFilter
+    - Intercepts all HTTP requests
+    - Extracts JWT token from Authorization header ("Bearer <token>")
+    - Validates token (signature, expiration, username)
+    - Loads UserDetails from database
+    - Creates Authentication object
+    - Sets authentication in SecurityContext
+  - Updated `SecurityConfig` with production configuration
+    - Added JwtAuthenticationFilter to security chain
+    - Configured public endpoints (/api/auth/**)
+    - Configured protected endpoints (all others require authentication)
+    - Added exception handling (401 Unauthorized, 403 Forbidden)
+    - Enabled @PreAuthorize support (@EnableMethodSecurity)
+  - Deleted `TestController` (no longer needed)
+  - Testing results:
+    - Login and get token: ✅
+    - Access protected endpoint WITHOUT token: ✅ (401 Unauthorized)
+    - Access protected endpoint WITH token: ✅ (200 OK)
+    - Remove token: ✅ (401 Unauthorized again)
+    - JWT validation in filter: ✅
+    - User loading from database: ✅
+    - SecurityContext authentication: ✅
 
-#### 📅 Week 3: Role-Based Access Control (Days 8-10) 📋 **PLANNED**
+**What We Built:**
+```
+src/main/java/com/gambling/betting_odds_api/
+├── config/
+│   └── SecurityConfig.java          # Production security configuration
+├── model/
+│   ├── Role.java                    # USER, BOOKMAKER, ADMIN enum
+│   └── User.java                    # User entity
+├── repository/
+│   └── UserRepository.java          # User data access
+├── security/
+│   ├── JwtTokenProvider.java        # JWT generation and validation
+│   ├── CustomUserDetailsService.java # Load users for Spring Security
+│   └── JwtAuthenticationFilter.java  # Request interception and authentication
+├── dto/
+│   ├── LoginRequest.java            # Login DTO
+│   ├── RegisterRequest.java         # Register DTO
+│   └── AuthResponse.java            # Auth response DTO
+├── service/
+│   └── AuthService.java             # Authentication business logic
+└── controller/
+    └── AuthController.java          # Authentication REST endpoints
+
+Database:
+└── users table (id, username, email, password, role, active, timestamps)
+
+Configuration:
+└── application.properties (jwt.secret, jwt.expiration, jwt.prefix)
+```
+
+**Authentication Flow:**
+```
+1. User registers:
+   POST /api/auth/register → AuthController → AuthService
+   → Hash password (BCrypt) → Save User to database
+   → Generate JWT token → Return AuthResponse
+
+2. User logs in:
+   POST /api/auth/login → AuthController → AuthService
+   → Validate credentials (BCrypt.matches) → Generate JWT token
+   → Return AuthResponse
+
+3. Authenticated request:
+   GET /api/odds (with Authorization: Bearer <token>)
+   → JwtAuthenticationFilter intercepts request
+   → Extract and validate token
+   → Load UserDetails from database (CustomUserDetailsService)
+   → Set authentication in SecurityContext
+   → Request proceeds to controller (user is authenticated)
+```
+
+**Security Features Implemented:**
+- ✅ JWT token generation (HMAC-SHA256, 24h expiration)
+- ✅ JWT token validation (signature, expiration, username)
+- ✅ BCrypt password hashing and verification
+- ✅ User registration with validation
+- ✅ User login with credential validation
+- ✅ Request interception and authentication
+- ✅ SecurityContext management (request-scoped)
+- ✅ Public endpoints (/api/auth/**)
+- ✅ Protected endpoints (require authentication)
+- ✅ Duplicate username/email prevention
+- ✅ Account status management (active/inactive)
+- ✅ Exception handling (401, 403)
+- ✅ User enumeration protection (same error for invalid user/password)
+
+**Testing Results:**
+
+| Test | Expected | Result |
+|------|----------|--------|
+| Register new user | 200 OK + token | ✅ Pass |
+| Login with valid credentials | 200 OK + token | ✅ Pass |
+| Duplicate username | 400 Bad Request | ✅ Pass |
+| Duplicate email | 400 Bad Request | ✅ Pass |
+| Wrong password | 401 Unauthorized | ✅ Pass |
+| Non-existent user | 401 Unauthorized | ✅ Pass |
+| JWT token structure | Valid JWT (3 parts) | ✅ Pass |
+| Access without token | 401 Unauthorized | ✅ Pass |
+| Access with valid token | 200 OK | ✅ Pass |
+| Remove token | 401 Unauthorized | ✅ Pass |
+
+#### 📅 Week 3: Role-Based Access Control (Days 8-10) 📋 **NEXT**
 
 **Goal:** Secure endpoints based on user roles
 
 **Planned Tasks:**
 - [ ] Day 8: Configure method security
-  - Enable `@EnableMethodSecurity`
+  - Enable `@EnableMethodSecurity` ✅ (already done in SecurityConfig)
   - Add `@PreAuthorize` to endpoints
+  - Test basic role restrictions
   
 - [ ] Day 9: Implement role-based authorization
   - USER: Read-only access (GET /api/odds)
@@ -541,6 +690,7 @@ Result: 1 row (john, john@test.com, hashed_password, USER, true) ✅
   - Test USER role (can only read)
   - Test BOOKMAKER role (can create/update)
   - Test ADMIN role (full access)
+  - Test 403 Forbidden responses
 
 #### 📅 Week 4: Testing & Documentation (Days 11-14) 📋 **PLANNED**
 
@@ -551,46 +701,48 @@ Result: 1 row (john, john@test.com, hashed_password, USER, true) ✅
   - Test authentication (login with valid/invalid credentials)
   - Test authorization (access endpoints with different roles)
   - Test JWT validation (expired token, invalid token)
+  - Update existing tests with JWT authentication
   
 - [ ] Day 13: Integration tests with JWT
   - Test complete flow (register → login → access protected endpoint)
   - Test security filter chain
+  - Test role-based access control
   
 - [ ] Day 14: Documentation and cleanup
   - Update README with authentication guide
   - Update Swagger with security scheme
-  - Delete TestController
   - Final review and commit
+  - Phase 3 completion celebration! 🎉
 
 #### 3.1 Spring Security Implementation ✅ **COMPLETE**
 - [x] Spring Security dependency
 - [x] Security configuration class
 - [x] Password encoding (BCrypt)
-- [ ] Authentication manager (Week 2)
-- [ ] Security filter chain (Week 2)
+- [x] Authentication manager
+- [x] Security filter chain
 - [x] CORS configuration (disabled CSRF)
 
-#### 3.2 JWT Token Authentication 📋 **Week 2**
-- [ ] JWT library (jjwt) integration ✅ (dependency added)
-- [ ] Token generation service
-- [ ] Token validation filter
-- [ ] Refresh token mechanism
-- [ ] Token expiration handling
-- [ ] Blacklist for revoked tokens
+#### 3.2 JWT Token Authentication ✅ **COMPLETE**
+- [x] JWT library (jjwt 0.12.6) integration
+- [x] Token generation service (JwtTokenProvider)
+- [x] Token validation filter (JwtAuthenticationFilter)
+- [x] Token expiration handling (24 hours)
+- [ ] Refresh token mechanism 📋 *Future*
+- [ ] Blacklist for revoked tokens 📋 *Future*
 
-#### 3.3 User Management ✅ **FOUNDATION COMPLETE**
-- [x] User entity (username, email, password, roles)
-- [x] User repository
-- [ ] User service (CRUD operations)
-- [ ] Registration endpoint (Week 2)
-- [ ] Login endpoint (returns JWT) (Week 2)
-- [ ] Logout endpoint
-- [ ] Password reset functionality
+#### 3.3 User Management ✅ **COMPLETE**
+- [x] User entity (username, email, password, role, active)
+- [x] User repository (with custom query methods)
+- [x] User service (AuthService - register, login)
+- [x] Registration endpoint (POST /api/auth/register)
+- [x] Login endpoint (POST /api/auth/login)
+- [ ] Logout endpoint 📋 *Future*
+- [ ] Password reset functionality 📋 *Future*
 
 #### 3.4 Role-Based Access Control (RBAC) 📋 **Week 3**
 - [x] Role enum (USER, ADMIN, BOOKMAKER) ✅
-- [ ] Method-level security (`@PreAuthorize`)
-- [ ] Endpoint-level authorization
+- [x] Method-level security enabled (@EnableMethodSecurity) ✅
+- [ ] Endpoint-level authorization with @PreAuthorize
 - [ ] Custom authorization logic
 
 **Example Roles:**
@@ -616,16 +768,22 @@ DELETE /api/odds/{id} - Allowed
 **Key Learning Outcomes:**
 - ✅ Spring Security architecture and configuration
 - ✅ Password security best practices (BCrypt hashing with salt)
-- ✅ Stateless authentication (JWT preparation)
+- ✅ Stateless authentication (JWT tokens)
 - ✅ User entity design and repository pattern
 - ✅ Enum-based role management
-- ✅ JWT token structure and generation (Header, Payload, Signature)
-- ✅ JWT signing with HMAC-SHA256
+- ✅ JWT token structure and signing (Header, Payload, Signature)
+- ✅ JWT generation with HMAC-SHA256
 - ✅ Token validation and claim extraction
 - ✅ DTO pattern for authentication (separation of concerns)
 - ✅ Bean validation (@NotBlank, @Email, @Size)
-- 📋 Authentication vs Authorization (Week 2-3)
-- 📋 API security patterns (Week 3-4)
+- ✅ Spring Security filter chain
+- ✅ UserDetailsService implementation
+- ✅ Authentication vs Authorization
+- ✅ SecurityContext management
+- ✅ Exception handling (401 Unauthorized, 403 Forbidden)
+- 📋 Role-based access control (@PreAuthorize) - *Week 3*
+- 📋 API security patterns - *Week 3-4*
+
 ---
 
 ### Phase 4: Performance & Reliability ⚡ **PLANNED**
@@ -876,7 +1034,52 @@ spring:
 
 ## 📊 API Endpoints
 
-### Odds Management
+### Authentication Endpoints (Public)
+
+| Method | Endpoint | Description | Request Body | Response | Auth Required |
+|--------|----------|-------------|--------------|----------|---------------|
+| POST | `/api/auth/register` | Register new user | `RegisterRequest` | `AuthResponse` (with JWT) | ❌ |
+| POST | `/api/auth/login` | Login user | `LoginRequest` | `AuthResponse` (with JWT) | ❌ |
+
+**Authentication Flow:**
+```bash
+# 1. Register new user
+POST /api/auth/register
+Body: {
+  "username": "john",
+  "email": "john@example.com",
+  "password": "password123"
+}
+Response: {
+  "token": "eyJhbGciOiJIUzI1NiJ9...",
+  "tokenType": "Bearer",
+  "username": "john",
+  "email": "john@example.com",
+  "role": "USER"
+}
+
+# 2. Login existing user
+POST /api/auth/login
+Body: {
+  "username": "john",
+  "password": "password123"
+}
+Response: {
+  "token": "eyJhbGciOiJIUzI1NiJ9...",
+  "tokenType": "Bearer",
+  "username": "john",
+  "email": "john@example.com",
+  "role": "USER"
+}
+
+# 3. Use token for authenticated requests
+GET /api/odds
+Headers: {
+  "Authorization": "Bearer eyJhbGciOiJIUzI1NiJ9..."
+}
+```
+
+### Odds Management (Protected - Requires Authentication)
 All GET endpoints support pagination and sorting.
 
 **Query Parameters:**
@@ -886,31 +1089,34 @@ All GET endpoints support pagination and sorting.
 
 **Examples:**
 ```bash
-# First page with 10 items
+# First page with 10 items (requires JWT token)
 GET /api/odds?page=0&size=10
+Headers: Authorization: Bearer <your-jwt-token>
 
 # Sort by date descending
 GET /api/odds?sort=matchDate,desc
+Headers: Authorization: Bearer <your-jwt-token>
 
 # Multiple sort fields
 GET /api/odds?page=1&size=20&sort=sport,asc&sort=homeOdds,desc
+Headers: Authorization: Bearer <your-jwt-token>
 ```
 
 ### Endpoints Table
 
-| Method | Endpoint | Description | Request Body | Response | Pagination |
-|--------|----------|-------------|--------------|----------|------------|
-| GET | `/api/odds` | Get all odds | - | `PageResponse<OddsResponse>` | ✅ |
-| GET | `/api/odds/active` | Get active odds only | - | `PageResponse<OddsResponse>` | ✅ |
-| GET | `/api/odds/{id}` | Get odds by ID | - | `OddsResponse` | ❌ |
-| GET | `/api/odds/sport/{sport}` | Get odds by sport | - | `PageResponse<OddsResponse>` | ✅ |
-| GET | `/api/odds/upcoming` | Get upcoming matches | - | `PageResponse<OddsResponse>` | ✅ |
-| GET | `/api/odds/team/{teamName}` | Get matches for team | - | `PageResponse<OddsResponse>` | ✅ |
-| GET | `/api/odds/{id}/margin` | Calculate bookmaker margin | - | `OddsResponse` (with calculations) | ❌ |
-| POST | `/api/odds` | Create new odds | `CreateOddsRequest` | `OddsResponse` | ❌ |
-| PUT | `/api/odds/{id}` | Update odds | `UpdateOddsRequest` | `OddsResponse` | ❌ |
-| PATCH | `/api/odds/{id}/deactivate` | Deactivate odds (soft delete) | - | Success message | ❌ |
-| DELETE | `/api/odds/{id}` | Delete odds permanently | - | Success message | ❌ |
+| Method | Endpoint | Description | Request Body | Response | Pagination | Auth Required |
+|--------|----------|-------------|--------------|----------|------------|---------------|
+| GET | `/api/odds` | Get all odds | - | `PageResponse<OddsResponse>` | ✅ | ✅ |
+| GET | `/api/odds/active` | Get active odds only | - | `PageResponse<OddsResponse>` | ✅ | ✅ |
+| GET | `/api/odds/{id}` | Get odds by ID | - | `OddsResponse` | ❌ | ✅ |
+| GET | `/api/odds/sport/{sport}` | Get odds by sport | - | `PageResponse<OddsResponse>` | ✅ | ✅ |
+| GET | `/api/odds/upcoming` | Get upcoming matches | - | `PageResponse<OddsResponse>` | ✅ | ✅ |
+| GET | `/api/odds/team/{teamName}` | Get matches for team | - | `PageResponse<OddsResponse>` | ✅ | ✅ |
+| GET | `/api/odds/{id}/margin` | Calculate bookmaker margin | - | `OddsResponse` (with calculations) | ❌ | ✅ |
+| POST | `/api/odds` | Create new odds | `CreateOddsRequest` | `OddsResponse` | ❌ | ✅ |
+| PUT | `/api/odds/{id}` | Update odds | `UpdateOddsRequest` | `OddsResponse` | ❌ | ✅ |
+| PATCH | `/api/odds/{id}/deactivate` | Deactivate odds (soft delete) | - | Success message | ❌ | ✅ |
+| DELETE | `/api/odds/{id}` | Delete odds permanently | - | Success message | ❌ | ✅ |
 
 ---
 
@@ -993,11 +1199,16 @@ Edit `src/main/resources/application.properties`:
 spring.datasource.url=jdbc:postgresql://localhost:5432/betting_test
 spring.datasource.username=postgres
 spring.datasource.password=admin123
+
+# JWT Configuration
+jwt.secret=your-secret-key-here-min-256-bits
+jwt.expiration=86400000
+jwt.prefix=Bearer
 ```
 
 4. **Install dependencies**
 ```bash
-mvn clean install
+mvn clean install -DskipTests
 ```
 
 5. **Run the application**
@@ -1009,16 +1220,42 @@ The API will be available at: `http://localhost:8080`
 
 ### Quick Test
 
-**Option 1: Via Swagger UI**
-1. Open http://localhost:8080/swagger-ui.html
-2. Find `POST /api/odds` endpoint
-3. Click "Try it out"
-4. Use example JSON
-5. Click "Execute"
+**Step 1: Register a user**
+```bash
+POST http://localhost:8080/api/auth/register
+Content-Type: application/json
 
-**Option 2: Via Postman**
+{
+  "username": "testuser",
+  "email": "test@example.com",
+  "password": "password123"
+}
+```
+
+**Step 2: Login (get JWT token)**
+```bash
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "password123"
+}
+
+Response:
+{
+  "token": "eyJhbGciOiJIUzI1NiJ9...",
+  "tokenType": "Bearer",
+  "username": "testuser",
+  "email": "test@example.com",
+  "role": "USER"
+}
+```
+
+**Step 3: Access protected endpoint**
 ```bash
 POST http://localhost:8080/api/odds
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 Content-Type: application/json
 
 {
@@ -1103,23 +1340,7 @@ Content-Type: application/json
 [SECURITY] 2025-01-15 14:28:45 - XSS attempt detected in sport field: "<script>alert('xss')</script>"
 [SECURITY] 2025-01-15 14:30:22 - Suspicious input blocked: Multiple SQL keywords detected
 ```
-### Development Testing Endpoints (Temporary)
 
-⚠️ **WARNING:** These endpoints are for Phase 3 development only and will be removed in Week 2!
-
-| Method | Endpoint | Description | Status |
-|--------|----------|-------------|--------|
-| POST | `/api/test/create-user?username=X&password=Y` | Create test user | 🔧 Dev Only |
-| GET | `/api/test/users` | List all users | 🔧 Dev Only |
-
-**Example:**
-```bash
-# Create test user
-POST http://localhost:8080/api/test/create-user?username=john&password=secret123
-
-# List all users
-GET http://localhost:8080/api/test/users
-```
 ---
 
 ## 💡 Business Logic Example
@@ -1153,6 +1374,8 @@ Bookmaker Margin: 104.8% - 100% = 4.8%
 - ✅ Mapper Pattern (DTO ↔ Entity conversion)
 - ✅ Repository Pattern (Data access abstraction)
 - ✅ Dependency Injection (IoC)
+- ✅ **Security Filter Chain Pattern**
+- ✅ **UserDetailsService Pattern**
 
 ### Best Practices
 - ✅ Bean Validation (Declarative input validation)
@@ -1164,6 +1387,8 @@ Bookmaker Margin: 104.8% - 100% = 4.8%
 - ✅ **Security Validation** (SQL injection, XSS prevention)
 - ✅ **Unit Testing** (JUnit 5, Mockito, AAA pattern)
 - ✅ **Integration Testing** (@DataJpaTest, H2 database)
+- ✅ **JWT Best Practices** (secure signing, expiration, validation)
+- ✅ **Password Security** (BCrypt hashing, never plain text)
 
 ### Domain Knowledge
 - ✅ Gambling industry concepts (odds formats, margins)
@@ -1172,6 +1397,8 @@ Bookmaker Margin: 104.8% - 100% = 4.8%
 - ✅ Regulatory compliance considerations
 - ✅ **Security threats** (SQL injection, XSS)
 - ✅ **Audit requirements** (compliance tracking)
+- ✅ **Authentication flows** (register, login, token-based)
+- ✅ **Authorization concepts** (role-based access control)
 
 ### Technologies Mastered
 - ✅ Spring Boot ecosystem
@@ -1184,13 +1411,31 @@ Bookmaker Margin: 104.8% - 100% = 4.8%
 - ✅ **JUnit 5 + Mockito** (unit testing)
 - ✅ **@DataJpaTest** (integration testing)
 - ✅ **H2 Database** (in-memory testing)
-- 📋 **MockMvc** (REST API testing) - *Next Up*
-- 📋 Spring Security - *Planned*
+- ✅ **Spring Security 6.x** (authentication & authorization)
+- ✅ **JWT (jjwt 0.12.6)** (token generation & validation)
+- ✅ **BCrypt** (password hashing)
+- 📋 **MockMvc** (REST API testing with JWT) - *Next Up*
+- 📋 **@PreAuthorize** (role-based authorization) - *Week 3*
 - 🚀 Microservices architecture - *Future*
 
 ---
 
 ## 🔒 Security Features
+
+### Authentication & Authorization
+- ✅ **JWT-based authentication** - Stateless, token-based auth
+- ✅ **BCrypt password hashing** - Secure password storage (60 chars, salt)
+- ✅ **Token validation** - Signature, expiration, username verification
+- ✅ **Security filter chain** - Request interception and authentication
+- ✅ **UserDetailsService** - Load users from database
+- ✅ **Role-based user model** - USER, BOOKMAKER, ADMIN
+- ✅ **Public endpoints** - /api/auth/** (no authentication required)
+- ✅ **Protected endpoints** - All others (authentication required)
+- ✅ **401 Unauthorized** - Invalid/missing token responses
+- ✅ **403 Forbidden** - Insufficient permissions (ready for role-based auth)
+- ✅ **User enumeration protection** - Same error for invalid user/password
+- ✅ **Duplicate prevention** - Unique username and email constraints
+- ✅ **Account status management** - Active/inactive flag (soft delete)
 
 ### Input Validation & Sanitization
 - ✅ SQL injection detection (DROP, DELETE, INSERT, etc.)
@@ -1205,6 +1450,8 @@ Bookmaker Margin: 104.8% - 100% = 4.8%
 3. **Layer 3**: JPA prepared statements (parameterized queries)
 4. **Layer 4**: Transaction management (rollback on violations)
 5. **Layer 5**: Logging and monitoring (attack detection)
+6. **Layer 6**: Spring Security filter chain (authentication & authorization)
+7. **Layer 7**: JWT token validation (signature, expiration)
 
 ### Example: Blocked Malicious Input
 ```json
@@ -1227,6 +1474,27 @@ Bookmaker Margin: 104.8% - 100% = 4.8%
 // Logged to security.log
 [SECURITY] 2025-01-15 14:25:12 - SQL injection attempt detected in homeTeam
 [SECURITY] 2025-01-15 14:25:12 - Transaction rolled back due to security violation
+```
+
+### Example: Authentication Flow
+```bash
+# Without token - 401 Unauthorized
+GET /api/odds
+Response: {
+  "error": "Unauthorized",
+  "message": "Authentication required. Please provide a valid JWT token."
+}
+
+# With valid token - 200 OK
+GET /api/odds
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+Response: [
+  {
+    "id": 1,
+    "sport": "Football",
+    ...
+  }
+]
 ```
 
 ---
@@ -1266,13 +1534,18 @@ If you have questions about the project or want to discuss implementation detail
 
 ## 🎯 What's Next?
 
-### Immediate Next Steps (Phase 3 - Security & Authentication)
-1. **Spring Security Setup** - Configure security framework
-2. **JWT Authentication** - Implement token-based auth
-3. **User Management** - Registration, login, roles
-4. **Role-Based Access Control** - Secure endpoints by role
+### Immediate Next Steps (Phase 3 Week 3 - Role-Based Authorization)
+1. **@PreAuthorize annotations** - Add role restrictions to endpoints
+2. **Test role-based access** - Verify USER, BOOKMAKER, ADMIN permissions
+3. **Update tests with JWT** - Add authentication to existing test suite
+4. **Documentation** - Complete Phase 3 authentication guide
 
-### After Security (Phase 4)
+### After Authorization (Phase 4)
+1. **Redis caching** - Improve performance with caching layer
+2. **Database optimization** - Query optimization and indexing
+3. **Async processing** - Heavy operations in background
+4. **Monitoring** - Prometheus metrics and Grafana dashboards
+
 ---
 
 **⭐ If you find this project helpful for learning, please give it a star!**
@@ -1281,11 +1554,12 @@ If you have questions about the project or want to discuss implementation detail
 
 ## 📊 Project Statistics
 
-- **Lines of Code**: ~3,500 (Java + XML + Properties)
-- **Total Commits**: 25+
-- **Features Completed**: Core CRUD + Logging System + Testing Framework
+- **Lines of Code**: ~5,500 (Java + XML + Properties)
+- **Total Commits**: 30+
+- **Features Completed**: Core CRUD + Logging + Testing + JWT Authentication
 - **Test Coverage**: ~92% (46/50 tests) ✅ Target Achieved!
-- **API Endpoints**: 10
-- **Database Tables**: 1 (odds)
+- **API Endpoints**: 12 (10 protected + 2 public)
+- **Database Tables**: 2 (betting_odds, users)
 - **Log Files**: 5 (application, errors, audit, performance, security)
 - **Test Files**: 4 (Service, Mapper, Repository, Controller)
+- **Security Features**: JWT + BCrypt + Filter Chain + UserDetailsService
