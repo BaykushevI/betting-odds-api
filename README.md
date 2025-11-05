@@ -7,7 +7,7 @@ A production-ready RESTful API for managing betting odds for sports matches, bui
 Phase 1: Core CRUD API              ✅ COMPLETE
 Phase 2.1: Production Logging       ✅ COMPLETE
 Phase 2.2: Unit & Integration Tests ✅ COMPLETE (46/50 tests, 92% coverage)
-Phase 3: Security & Authentication  🔐 IN PROGRESS (Week 2/4 - Days 6-7 COMPLETE)
+Phase 3: Security & Authentication  🔐 IN PROGRESS (Week 3/4 - Day 8 COMPLETE)
 Phase 4: Performance & Reliability  📋 PLANNED  
 Phase 5: Microservices & Gateway    🚀 FUTURE
 Phase 6: Cloud Deployment           ☁️ ADVANCED
@@ -671,26 +671,34 @@ Configuration:
 | Access with valid token | 200 OK | ✅ Pass |
 | Remove token | 401 Unauthorized | ✅ Pass |
 
-#### 📅 Week 3: Role-Based Access Control (Days 8-10) 📋 **NEXT**
+#### 📅 Week 3: Role-Based Access Control (Days 8-10) 🔄 **IN PROGRESS**
 
 **Goal:** Secure endpoints based on user roles
 
-**Planned Tasks:**
-- [ ] Day 8: Configure method security
-  - Enable `@EnableMethodSecurity` ✅ (already done in SecurityConfig)
-  - Add `@PreAuthorize` to endpoints
-  - Test basic role restrictions
+**Progress:**
+- [x] Day 8: Configure method security ✅
+  - Added `@PreAuthorize` annotations to all BettingOddsController endpoints
+  - Configured role-based permissions:
+    - USER: Read-only access (GET endpoints only)
+    - BOOKMAKER: Read + Create + Update (GET, POST, PUT, PATCH)
+    - ADMIN: Full access including DELETE
+  - Added AccessDeniedException handler (403 Forbidden responses)
+  - Created test users (USER, BOOKMAKER, ADMIN)
+  - Testing results:
+    - USER: ✅ Can read, ❌ Cannot create/update/delete (403)
+    - BOOKMAKER: ✅ Can read/create/update, ❌ Cannot delete (403)
+    - ADMIN: ✅ Full access to all operations
+  - Deleted temporary test endpoint (hash-password)
   
-- [ ] Day 9: Implement role-based authorization
-  - USER: Read-only access (GET /api/odds)
-  - BOOKMAKER: Create/update odds (POST, PUT /api/odds)
-  - ADMIN: Full access including delete (DELETE /api/odds)
+- [ ] Day 9: Advanced authorization scenarios 📋 **OPTIONAL**
+  - Add more granular permissions (e.g., user can only update own bets)
+  - Implement endpoint-specific authorization logic
+  - Add authorization audit logging
   
-- [ ] Day 10: Test role-based access
-  - Test USER role (can only read)
-  - Test BOOKMAKER role (can create/update)
-  - Test ADMIN role (full access)
-  - Test 403 Forbidden responses
+- [ ] Day 10: Update tests with JWT authentication 📋 **NEXT**
+  - Update BettingOddsControllerTest with JWT tokens
+  - Test role-based access in integration tests
+  - Verify 403 Forbidden responses in tests
 
 #### 📅 Week 4: Testing & Documentation (Days 11-14) 📋 **PLANNED**
 
@@ -739,23 +747,31 @@ Configuration:
 - [ ] Logout endpoint 📋 *Future*
 - [ ] Password reset functionality 📋 *Future*
 
-#### 3.4 Role-Based Access Control (RBAC) 📋 **Week 3**
+#### 3.4 Role-Based Access Control (RBAC) ✅ **COMPLETE**
 - [x] Role enum (USER, ADMIN, BOOKMAKER) ✅
 - [x] Method-level security enabled (@EnableMethodSecurity) ✅
-- [ ] Endpoint-level authorization with @PreAuthorize
-- [ ] Custom authorization logic
+- [x] Endpoint-level authorization with @PreAuthorize ✅
+- [x] Role-based permissions implemented:
+  - USER: Read-only (GET endpoints)
+  - BOOKMAKER: Read + Create + Update (GET, POST, PUT, PATCH)
+  - ADMIN: Full access including DELETE
+- [x] 403 Forbidden handling for insufficient permissions ✅
+- [x] Testing with multiple user roles ✅
 
-**Example Roles:**
+**Role Permissions (Implemented):**
 ```java
-// USER - Can only view odds
-GET /api/odds - Allowed
+// USER - Read-only access
+@PreAuthorize("hasAnyRole('USER', 'BOOKMAKER', 'ADMIN')")
+GET /api/odds - Allowed for all authenticated users
 
-// BOOKMAKER - Can create/update odds
-POST /api/odds - Allowed
-PUT /api/odds/{id} - Allowed
+// BOOKMAKER - Create and update odds
+@PreAuthorize("hasAnyRole('BOOKMAKER', 'ADMIN')")
+POST /api/odds - Allowed for BOOKMAKER and ADMIN
+PUT /api/odds/{id} - Allowed for BOOKMAKER and ADMIN
 
 // ADMIN - Full access including delete
-DELETE /api/odds/{id} - Allowed
+@PreAuthorize("hasRole('ADMIN')")
+DELETE /api/odds/{id} - Allowed for ADMIN only
 ```
 
 #### 3.5 Rate Limiting 📋 **Phase 4**
@@ -781,8 +797,10 @@ DELETE /api/odds/{id} - Allowed
 - ✅ Authentication vs Authorization
 - ✅ SecurityContext management
 - ✅ Exception handling (401 Unauthorized, 403 Forbidden)
-- 📋 Role-based access control (@PreAuthorize) - *Week 3*
-- 📋 API security patterns - *Week 3-4*
+- ✅ **Role-based authorization** (@PreAuthorize annotations)
+- ✅ **Method-level security** (hasRole, hasAnyRole)
+- ✅ Role-based access control (@PreAuthorize) - **COMPLETE**
+- 📋 API security patterns - *Week 4*
 
 ---
 
@@ -1079,7 +1097,20 @@ Headers: {
 }
 ```
 
-### Odds Management (Protected - Requires Authentication)
+### Odds Management (Protected - Requires Authentication + Role-Based Authorization)
+
+**⚠️ Role-Based Permissions:**
+
+| Endpoint | USER | BOOKMAKER | ADMIN | Required Role |
+|----------|------|-----------|-------|---------------|
+| GET /api/odds | ✅ | ✅ | ✅ | USER, BOOKMAKER, ADMIN |
+| GET /api/odds/{id} | ✅ | ✅ | ✅ | USER, BOOKMAKER, ADMIN |
+| GET /api/odds/sport/{sport} | ✅ | ✅ | ✅ | USER, BOOKMAKER, ADMIN |
+| POST /api/odds | ❌ | ✅ | ✅ | BOOKMAKER, ADMIN |
+| PUT /api/odds/{id} | ❌ | ✅ | ✅ | BOOKMAKER, ADMIN |
+| PATCH /api/odds/{id}/deactivate | ❌ | ✅ | ✅ | BOOKMAKER, ADMIN |
+| DELETE /api/odds/{id} | ❌ | ❌ | ✅ | ADMIN only |
+
 All GET endpoints support pagination and sorting.
 
 **Query Parameters:**
