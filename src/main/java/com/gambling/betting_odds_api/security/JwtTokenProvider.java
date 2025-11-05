@@ -2,7 +2,6 @@ package com.gambling.betting_odds_api.security;
 // JWT Library - Token creation and parsing
 import io.jsonwebtoken.Claims;                    // JWT payload (claims)
 import io.jsonwebtoken.Jwts;                      // JWT builder and parser
-import io.jsonwebtoken.SignatureAlgorithm;        // Signing algorithms
 import io.jsonwebtoken.security.Keys;             // Secure key generation
 import io.jsonwebtoken.JwtException;              // JWT exceptions
 // Lombok - Logging

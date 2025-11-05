@@ -428,11 +428,20 @@ src/main/java/com/gambling/betting_odds_api/
 │   └── User.java                    # User entity with BCrypt password
 ├── repository/
 │   └── UserRepository.java          # User data access layer
+├── security/
+│   └── JwtTokenProvider.java        # JWT token generation and validation
+├── dto/
+│   ├── LoginRequest.java            # Login DTO (username, password)
+│   ├── RegisterRequest.java         # Register DTO (username, email, password)
+│   └── AuthResponse.java            # Auth response DTO (token, user info)
 └── controller/
     └── TestController.java          # Temporary testing endpoints (DELETE in Week 2)
 
 Database:
 └── users table (id, username, email, password, role, active, timestamps)
+
+Configuration:
+└── application.properties (jwt.secret, jwt.expiration, jwt.prefix)
 ```
 
 **Security Features Implemented:**
@@ -460,27 +469,55 @@ SELECT * FROM users;
 Result: 1 row (john, john@test.com, hashed_password, USER, true) ✅
 ```
 
-#### 📅 Week 2: JWT Authentication (Days 4-7) 📋 **NEXT**
+#### 📅 Week 2: JWT Authentication (Days 4-7) 🔄 **IN PROGRESS**
 
 **Goal:** Implement JWT token generation and validation
 
-**Planned Tasks:**
-- [ ] Day 4: Create JWT utility class
-  - Create `JwtTokenProvider` (generate, validate, extract claims)
-  - Add JWT configuration properties (secret, expiration)
-  - Test token generation and validation
+**Progress:**
+- [x] Day 4: Create JWT utility class ✅
+  - Created `JwtTokenProvider` class in security package
+  - Added JWT configuration in application.properties
+    - jwt.secret (signing key)
+    - jwt.expiration (24 hours = 86400000ms)
+    - jwt.prefix (Bearer)
+  - Implemented token generation (generateToken)
+  - Implemented token validation (validateToken with username check)
+  - Implemented claim extraction (extractUsername, extractExpiration)
+  - Used JJWT 0.12.6 API (parser(), verifyWith(), parseSignedClaims())
+  - Added test endpoints in TestController
+    - POST /api/test/generate-token
+    - POST /api/test/validate-token
+  - Testing results:
+    - Token generation: ✅ (147 chars, HS256 algorithm)
+    - Token validation: ✅ (signature verified)
+    - Username extraction: ✅
+    - Expiration check: ✅ (24 hours from creation)
+    - Invalid token rejection: ✅
   
-- [ ] Day 5: Create authentication DTOs
-  - Create `LoginRequest` DTO (username, password)
-  - Create `RegisterRequest` DTO (username, email, password)
-  - Create `AuthResponse` DTO (token, username, role)
+- [x] Day 5: Create authentication DTOs ✅
+  - Created `LoginRequest` DTO
+    - Fields: username, password
+    - Validation: @NotBlank on both fields
+    - Used for POST /api/auth/login
+  - Created `RegisterRequest` DTO
+    - Fields: username, email, password
+    - Validation: @NotBlank, @Size(3-50), @Email, @Size(6-100)
+    - Used for POST /api/auth/register
+  - Created `AuthResponse` DTO
+    - Fields: token, tokenType, username, email, role
+    - Default tokenType: "Bearer"
+    - Returned after successful login/register
+  - Added comprehensive validation annotations
+  - Documented authentication flow (register → login → authenticated request)
   
-- [ ] Day 6: Create AuthService and AuthController
+- [ ] Day 6: Create AuthService and AuthController 📋 **NEXT**
   - Create `AuthService` (register, login logic)
   - Create `AuthController` (register, login endpoints)
   - Integrate BCrypt for password validation
+  - Handle duplicate username/email errors
+  - Generate JWT token after successful auth
   
-- [ ] Day 7: Create JWT authentication filter
+- [ ] Day 7: Create JWT authentication filter 📋 **PLANNED**
   - Create `JwtAuthenticationFilter`
   - Extract token from Authorization header
   - Validate token and set authentication in SecurityContext
@@ -578,11 +615,15 @@ DELETE /api/odds/{id} - Allowed
 
 **Key Learning Outcomes:**
 - ✅ Spring Security architecture and configuration
-- ✅ Password security best practices (BCrypt hashing)
+- ✅ Password security best practices (BCrypt hashing with salt)
 - ✅ Stateless authentication (JWT preparation)
 - ✅ User entity design and repository pattern
 - ✅ Enum-based role management
-- 📋 JWT token structure and validation (Week 2)
+- ✅ JWT token structure and generation (Header, Payload, Signature)
+- ✅ JWT signing with HMAC-SHA256
+- ✅ Token validation and claim extraction
+- ✅ DTO pattern for authentication (separation of concerns)
+- ✅ Bean validation (@NotBlank, @Email, @Size)
 - 📋 Authentication vs Authorization (Week 2-3)
 - 📋 API security patterns (Week 3-4)
 ---
