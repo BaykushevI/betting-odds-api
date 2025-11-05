@@ -1,5 +1,8 @@
 package com.gambling.betting_odds_api.exception;
 
+// SPRING SECURITY - Access control exceptions
+import org.springframework.security.access.AccessDeniedException; // 403 Forbidden
+
 // INTERNAL PROJECT IMPORTS
 import com.gambling.betting_odds_api.logging.AuditLogger;
 import com.gambling.betting_odds_api.logging.SecurityLogger;
@@ -152,7 +155,41 @@ public class GlobalExceptionHandler {
         
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
-    
+
+    /**
+     * Handle Access Denied (403 Forbidden).
+     * Thrown when authenticated user doesn't have required role/permission.
+     * 
+     * Examples:
+     * - USER trying to create odds (requires BOOKMAKER/ADMIN)
+     * - BOOKMAKER trying to delete odds (requires ADMIN)
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(
+            AccessDeniedException ex,
+            WebRequest request) {
+        
+        String endpoint = extractEndpoint(request);
+        
+        log.warn("Access denied at {}: {}", endpoint, ex.getMessage());
+        
+        // Log security event
+        //securityLogger.logCustomSecurityEvent(
+        //    "ACCESS_DENIED",
+        //    String.format("Endpoint=%s, Reason=%s", endpoint, ex.getMessage())
+        //);
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.FORBIDDEN.value(),
+                "Forbidden",
+                "You don't have permission to access this resource.",
+                endpoint
+        );
+        
+        return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ResponseEntity<ErrorResponse> handleGlobalException(

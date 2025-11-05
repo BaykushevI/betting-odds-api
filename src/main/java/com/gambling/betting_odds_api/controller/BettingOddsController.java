@@ -55,6 +55,7 @@ import java.util.HashMap;   // Key-value pairs for success messages
 import java.util.List;      // Interface for ordered collections
 import java.util.Map;       // Interface for key-value pairs
 
+import org.springframework.security.access.prepost.PreAuthorize; // Role-based authorization
 /**
  * BettingOddsController - REST API endpoints for managing betting odds.
  * 
@@ -95,7 +96,7 @@ public class BettingOddsController {
     // ═══════════════════════════════════════════════════════════════════════
     // GET ENDPOINTS - Read Operations
     // ═══════════════════════════════════════════════════════════════════════
-    
+    @PreAuthorize("hasAnyRole('USER', 'BOOKMAKER', 'ADMIN')")
     /**
      * GET /api/odds - Retrieve all betting odds with pagination and sorting.
      * 
@@ -141,6 +142,7 @@ public class BettingOddsController {
     /**
      * GET /api/odds/active - Get only active odds.
      */
+    @PreAuthorize("hasAnyRole('USER', 'BOOKMAKER', 'ADMIN')")
     @GetMapping("/active")
     public ResponseEntity<PageResponse<OddsResponse>> getActiveOdds(
             @RequestParam(required = false) Integer page,
@@ -155,6 +157,7 @@ public class BettingOddsController {
     /**
      * GET /api/odds/{id} - Get odds by ID.
      */
+    @PreAuthorize("hasAnyRole('USER', 'BOOKMAKER', 'ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<OddsResponse> getOddsById(@PathVariable Long id) {
         OddsResponse odds = service.getOddsById(id);
@@ -164,6 +167,7 @@ public class BettingOddsController {
     /**
      * GET /api/odds/sport/{sport} - Get odds by sport.
      */
+    @PreAuthorize("hasAnyRole('USER', 'BOOKMAKER', 'ADMIN')")
     @GetMapping("/sport/{sport}")
     public ResponseEntity<PageResponse<OddsResponse>> getOddsBySport(
             @PathVariable String sport,
@@ -179,6 +183,7 @@ public class BettingOddsController {
     /**
      * GET /api/odds/upcoming - Get upcoming matches (future dates only).
      */
+    @PreAuthorize("hasAnyRole('USER', 'BOOKMAKER', 'ADMIN')")
     @GetMapping("/upcoming")
     public ResponseEntity<PageResponse<OddsResponse>> getUpcomingMatches(
             @RequestParam(required = false) Integer page,
@@ -193,6 +198,7 @@ public class BettingOddsController {
     /**
      * GET /api/odds/team/{teamName} - Get matches for specific team.
      */
+    @PreAuthorize("hasAnyRole('USER', 'BOOKMAKER', 'ADMIN')")
     @GetMapping("/team/{teamName}")
     public ResponseEntity<PageResponse<OddsResponse>> getMatchesForTeam(
             @PathVariable String teamName,
@@ -208,6 +214,7 @@ public class BettingOddsController {
     /**
      * GET /api/odds/{id}/margin - Calculate bookmaker margin for specific odds.
      */
+    @PreAuthorize("hasAnyRole('USER', 'BOOKMAKER', 'ADMIN')")
     @GetMapping("/{id}/margin")
     public ResponseEntity<OddsResponse> getBookmakerMargin(@PathVariable Long id) {
         OddsResponse response = service.getOddsWithMargin(id);
@@ -224,6 +231,7 @@ public class BettingOddsController {
      * @Valid triggers validation rules from CreateOddsRequest
      * Returns 201 CREATED on success
      */
+    @PreAuthorize("hasAnyRole('BOOKMAKER', 'ADMIN')")
     @Operation(
         summary = "Create new betting odds", 
         description = "Create a new odds entry for a sports match."
@@ -258,6 +266,7 @@ public class BettingOddsController {
     /**
      * PUT /api/odds/{id} - Update existing odds.
      */
+    @PreAuthorize("hasAnyRole('BOOKMAKER', 'ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<OddsResponse> updateOdds(
             @PathVariable Long id, 
@@ -277,6 +286,7 @@ public class BettingOddsController {
      * Sets active=false instead of deleting from database.
      * Preferred over hard delete for audit trail.
      */
+    @PreAuthorize("hasAnyRole('BOOKMAKER', 'ADMIN')")
     @PatchMapping("/{id}/deactivate")
     public ResponseEntity<Map<String, String>> deactivateOdds(@PathVariable Long id) {
         service.deactivateOdds(id);
@@ -293,6 +303,7 @@ public class BettingOddsController {
      * ⚠️ WARNING: This is PERMANENT and IRREVERSIBLE!
      * Should be rare in production. Prefer soft delete (deactivate).
      */
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, String>> deleteOdds(@PathVariable Long id) {
         service.deleteOdds(id);

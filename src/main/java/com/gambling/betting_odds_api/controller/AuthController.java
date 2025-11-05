@@ -50,7 +50,6 @@ Token should be sent in Authorization header: "Bearer <token>"
 public class AuthController {
     // Dependency injected via constructor (@RequiredArgsConstructor)
     private final AuthService authService;
-
     /**
      * Register a new user.
      * 
