@@ -375,11 +375,11 @@ logs/
 
 | Component | Tests Written | Coverage | Status |
 |-----------|--------------|----------|--------|
-| **BettingOddsService** | 16/20 | ~80% | ✅ Week 1 Complete |
-| **OddsMapper** | 8/8 | ~100% | ✅ Week 2 Day 5-6 Complete |
-| **BettingOddsRepository** | 10/10 | ~100% | ✅ Week 2 Day 7-9 Complete |
-| **BettingOddsController** | 12/12 | ~100% | ✅ Week 2 Day 10-11 Complete |
-| **TOTAL** | **46/50** | **~92%** | 🎯 **Target: 80%+ ACHIEVED! ✅** |
+| **BettingOddsService** | 16/20 | ~80% | ✅ Complete |
+| **OddsMapper** | 8/8 | ~100% | ✅ Complete |
+| **BettingOddsRepository** | 10/10 | ~100% | ✅ Complete |
+| **BettingOddsController** | 18/18 | ~100% | ✅ Complete (Updated with JWT) |
+| **TOTAL** | **52/56** | **~95%** | 🎯 **Excellent Coverage!** |
 
 **What We Learned:**
 - ✅ JUnit 5 basics (test structure, assertions)
@@ -671,7 +671,7 @@ Configuration:
 | Access with valid token | 200 OK | ✅ Pass |
 | Remove token | 401 Unauthorized | ✅ Pass |
 
-#### 📅 Week 3: Role-Based Access Control (Days 8-10) 🔄 **IN PROGRESS**
+#### 📅 Week 3: Role-Based Access Control (Days 8-10) ✅ **COMPLETE**
 
 **Goal:** Secure endpoints based on user roles
 
@@ -690,12 +690,12 @@ Configuration:
     - ADMIN: ✅ Full access to all operations
   - Deleted temporary test endpoint (hash-password)
   
-- [ ] Day 9: Advanced authorization scenarios 📋 **OPTIONAL**
+- [ ] Day 9: Advanced authorization scenarios 📋 **SKIPPED (Optional)**
   - Add more granular permissions (e.g., user can only update own bets)
   - Implement endpoint-specific authorization logic
   - Add authorization audit logging
   
-- [ ] Day 10: Update tests with JWT authentication 📋 **NEXT**
+- [ ] Day 10: Update tests with JWT authentication ✅ **COMPLETE**
   - Update BettingOddsControllerTest with JWT tokens
   - Test role-based access in integration tests
   - Verify 403 Forbidden responses in tests
@@ -1135,19 +1135,19 @@ Headers: Authorization: Bearer <your-jwt-token>
 
 ### Endpoints Table
 
-| Method | Endpoint | Description | Request Body | Response | Pagination | Auth Required |
+| Method | Endpoint | Description | Request Body | Response | Pagination | Auth Required | Min Role |
 |--------|----------|-------------|--------------|----------|------------|---------------|
-| GET | `/api/odds` | Get all odds | - | `PageResponse<OddsResponse>` | ✅ | ✅ |
-| GET | `/api/odds/active` | Get active odds only | - | `PageResponse<OddsResponse>` | ✅ | ✅ |
-| GET | `/api/odds/{id}` | Get odds by ID | - | `OddsResponse` | ❌ | ✅ |
-| GET | `/api/odds/sport/{sport}` | Get odds by sport | - | `PageResponse<OddsResponse>` | ✅ | ✅ |
-| GET | `/api/odds/upcoming` | Get upcoming matches | - | `PageResponse<OddsResponse>` | ✅ | ✅ |
-| GET | `/api/odds/team/{teamName}` | Get matches for team | - | `PageResponse<OddsResponse>` | ✅ | ✅ |
-| GET | `/api/odds/{id}/margin` | Calculate bookmaker margin | - | `OddsResponse` (with calculations) | ❌ | ✅ |
-| POST | `/api/odds` | Create new odds | `CreateOddsRequest` | `OddsResponse` | ❌ | ✅ |
-| PUT | `/api/odds/{id}` | Update odds | `UpdateOddsRequest` | `OddsResponse` | ❌ | ✅ |
-| PATCH | `/api/odds/{id}/deactivate` | Deactivate odds (soft delete) | - | Success message | ❌ | ✅ |
-| DELETE | `/api/odds/{id}` | Delete odds permanently | - | Success message | ❌ | ✅ |
+| GET | `/api/odds` | Get all odds | - | `PageResponse<OddsResponse>` | ✅ | ✅ | USER |
+| GET | `/api/odds/active` | Get active odds only | - | `PageResponse<OddsResponse>` | ✅ | ✅ | USER |
+| GET | `/api/odds/{id}` | Get odds by ID | - | `OddsResponse` | ❌ | ✅ | USER |
+| GET | `/api/odds/sport/{sport}` | Get odds by sport | - | `PageResponse<OddsResponse>` | ✅ | ✅ | USER |
+| GET | `/api/odds/upcoming` | Get upcoming matches | - | `PageResponse<OddsResponse>` | ✅ | ✅ | USER |
+| GET | `/api/odds/team/{teamName}` | Get matches for team | - | `PageResponse<OddsResponse>` | ✅ | ✅ | USER |
+| GET | `/api/odds/{id}/margin` | Calculate bookmaker margin | - | `OddsResponse` (with calculations) | ❌ | ✅ | USER |
+| POST | `/api/odds` | Create new odds | `CreateOddsRequest` | `OddsResponse` | ❌ | ✅ | BOOKMAKER |
+| PUT | `/api/odds/{id}` | Update odds | `UpdateOddsRequest` | `OddsResponse` | ❌ | ✅ | BOOKMAKER |
+| PATCH | `/api/odds/{id}/deactivate` | Deactivate odds (soft delete) | - | Success message | ❌ | ✅ | BOOKMAKER |
+| DELETE | `/api/odds/{id}` | Delete odds permanently | - | Success message | ❌ | ✅ | ADMIN |
 
 ---
 
@@ -1585,12 +1585,12 @@ If you have questions about the project or want to discuss implementation detail
 
 ## 📊 Project Statistics
 
-- **Lines of Code**: ~5,500 (Java + XML + Properties)
-- **Total Commits**: 30+
-- **Features Completed**: Core CRUD + Logging + Testing + JWT Authentication
-- **Test Coverage**: ~92% (46/50 tests) ✅ Target Achieved!
+- **Lines of Code**: ~6,500 (Java + XML + Properties)
+- **Total Commits**: 35+
+- **Features Completed**: Core CRUD + Logging + Testing + JWT Auth + RBAC
+- **Test Coverage**: ~95% (52/56 tests) ✅
 - **API Endpoints**: 12 (10 protected + 2 public)
 - **Database Tables**: 2 (betting_odds, users)
 - **Log Files**: 5 (application, errors, audit, performance, security)
-- **Test Files**: 4 (Service, Mapper, Repository, Controller)
-- **Security Features**: JWT + BCrypt + Filter Chain + UserDetailsService
+- **Test Files**: 4 (Service, Mapper, Repository, Controller with JWT)
+- **Security Features**: JWT + BCrypt + Filter Chain + @PreAuthorize + Role-Based Tests
