@@ -7,8 +7,8 @@ A production-ready RESTful API for managing betting odds for sports matches, bui
 Phase 1: Core CRUD API              ✅ COMPLETE
 Phase 2.1: Production Logging       ✅ COMPLETE
 Phase 2.2: Unit & Integration Tests ✅ COMPLETE (46/50 tests, 92% coverage)
-Phase 3: Security & Authentication  🔐 IN PROGRESS (Week 3/4 - Day 8 COMPLETE)
-Phase 4: Performance & Reliability  📋 PLANNED  
+Phase 3: Security & Authentication  ✅ COMPLETE (Week 3 Day 10 COMPLETE)
+Phase 4: Performance & Reliability  ⚡ IN PROGRESS (Week 1 Days 1-2 COMPLETE)
 Phase 5: Microservices & Gateway    🚀 FUTURE
 Phase 6: Cloud Deployment           ☁️ ADVANCED
 ```
@@ -149,6 +149,10 @@ This is a comprehensive **learning project** demonstrating professional backend 
 - **Spring Security 6.x** - Security framework ✅ **IN USE**
 - **JWT (jjwt 0.12.6)** - JSON Web Tokens ✅ **IN USE**
 - **BCrypt** - Password hashing algorithm ✅ **IN USE**
+- ✅ **Docker** (containerization, image/container management) - NEW Phase 4
+- ✅ **Redis 7** (in-memory caching, data structures) - NEW Phase 4
+- ✅ **Spring Data Redis** (caching integration) - NEW Phase 4
+- ✅ **Lettuce** (Redis client, connection pooling) - NEW Phase 4
 
 ### Production Tools
 - **Logback** - Advanced logging framework ✅ **COMPLETE**
@@ -162,11 +166,15 @@ This is a comprehensive **learning project** demonstrating professional backend 
 - **@DataJpaTest** - Repository integration tests ✅ **IN USE**
 - **H2 Database** - In-memory database for tests ✅ **IN USE**
 
+### Phase 4 Technologies (IN USE)
+- **Docker** - Containerization 🐳 ✅ **IN USE**
+- **Redis 7** - In-memory caching ⚡ ✅ **IN USE**
+- **Spring Data Redis** - Redis integration ✅ **IN USE**
+- **Lettuce** - Redis client (connection pooling) ✅ **IN USE**
+
 ### Future Technologies
-- **Redis** - Caching layer ⚡ *Phase 4*
-- **Docker** - Containerization 🐳 *Phase 6*
-- **Spring Cloud Gateway** - API Gateway 🚪 *Phase 5*
-- **Eureka** - Service Discovery 🔍 *Phase 5*
+- **Prometheus** - Metrics collection 📊 *Phase 4 Week 4*
+- **Grafana** - Monitoring dashboards 📈 *Phase 4 Week 4*
 
 ---
 
@@ -375,11 +383,11 @@ logs/
 
 | Component | Tests Written | Coverage | Status |
 |-----------|--------------|----------|--------|
-| **BettingOddsService** | 16/20 | ~80% | ✅ Complete |
-| **OddsMapper** | 8/8 | ~100% | ✅ Complete |
-| **BettingOddsRepository** | 10/10 | ~100% | ✅ Complete |
-| **BettingOddsController** | 18/18 | ~100% | ✅ Complete (Updated with JWT) |
-| **TOTAL** | **52/56** | **~95%** | 🎯 **Excellent Coverage!** |
+| **BettingOddsService** | 16/20 | ~80% | ✅ Week 1 Complete |
+| **OddsMapper** | 8/8 | ~100% | ✅ Week 2 Day 5-6 Complete |
+| **BettingOddsRepository** | 10/10 | ~100% | ✅ Week 2 Day 7-9 Complete |
+| **BettingOddsController** | 18/18 | ~100% | ✅ Phase 3 Week 3 Day 10 Complete (Updated with JWT) |
+| **TOTAL** | **52/56** | **~95%** | 🎯 **Excellent Coverage! Target: 80%+ EXCEEDED! ✅** |
 
 **What We Learned:**
 - ✅ JUnit 5 basics (test structure, assertions)
@@ -395,6 +403,10 @@ logs/
 - ✅ JSON assertions with JSONPath
 - ✅ Testing REST API status codes
 - ✅ End-to-end HTTP request/response testing
+- ✅ **JWT token generation in tests** (NEW)
+- ✅ **Testing with Authorization header** (NEW)
+- ✅ **Role-based authorization testing** (NEW)
+- ✅ **Testing 403 Forbidden and 401 Unauthorized** (NEW)
 
 ---
 
@@ -695,10 +707,32 @@ Configuration:
   - Implement endpoint-specific authorization logic
   - Add authorization audit logging
   
-- [ ] Day 10: Update tests with JWT authentication ✅ **COMPLETE**
-  - Update BettingOddsControllerTest with JWT tokens
-  - Test role-based access in integration tests
-  - Verify 403 Forbidden responses in tests
+- [x] Day 10: Update tests with JWT authentication ✅ **COMPLETE**
+  - Updated BettingOddsControllerTest with JWT token generation
+  - Added UserRepository, JwtTokenProvider, BCryptPasswordEncoder to tests
+  - Created test users with different roles (USER, BOOKMAKER, ADMIN) in @BeforeEach
+  - Generated unique usernames with timestamp suffix (fixes duplicate key constraint)
+  - Updated all 12 existing tests to include Authorization header with JWT token
+  - Added 6 NEW authorization tests:
+    - POST /api/odds - USER role → 403 Forbidden
+    - PUT /api/odds/{id} - USER role → 403 Forbidden
+    - PATCH /api/odds/{id}/deactivate - USER role → 403 Forbidden
+    - DELETE /api/odds/{id} - USER role → 403 Forbidden
+    - DELETE /api/odds/{id} - BOOKMAKER role → 403 Forbidden
+    - GET /api/odds - No token → 401 Unauthorized
+  - Fixed pagination test (PageResponse uses "pageSize" not "size")
+  - All 18 tests passing ✅
+
+**Week 3 Summary:**
+- 18 integration tests for BettingOddsController (12 updated + 6 new)
+- 100% Controller coverage with JWT authentication
+- Role-based access control fully tested
+- Test users with unique identifiers (timestamp suffix)
+- Authorization matrix verified:
+  - USER: ✅ Can GET, ❌ Cannot POST/PUT/PATCH/DELETE (403)
+  - BOOKMAKER: ✅ Can GET/POST/PUT/PATCH, ❌ Cannot DELETE (403)
+  - ADMIN: ✅ Full access (GET/POST/PUT/PATCH/DELETE)
+  - No token: ❌ 401 Unauthorized
 
 #### 📅 Week 4: Testing & Documentation (Days 11-14) 📋 **PLANNED**
 
@@ -804,34 +838,84 @@ DELETE /api/odds/{id} - Allowed for ADMIN only
 
 ---
 
-### Phase 4: Performance & Reliability ⚡ **PLANNED**
+### Phase 4: Performance & Reliability ⚡ **IN PROGRESS**
 **Duration:** 3-4 weeks | **Complexity:** ⭐⭐⭐⭐ Advanced
 
 **Prerequisites:**
 - Understanding of caching strategies
-- Database performance tuning
-- Async programming concepts
+- Database performance tuning basics
+- Docker fundamentals
 
-#### 4.1 Caching with Redis
-- [ ] Redis installation and setup
-- [ ] Spring Data Redis integration
-- [ ] Cache configuration
-- [ ] Cacheable methods (`@Cacheable`)
-- [ ] Cache eviction strategies
-- [ ] Cache-aside pattern
-- [ ] Redis monitoring
+#### 📅 Week 1: Redis Caching (Days 1-7) 🔄 **IN PROGRESS**
 
-**Caching Strategy:**
-```java
-// Cache frequently accessed odds
-@Cacheable(value = "odds", key = "#id")
-public OddsResponse getOddsById(Long id)
+**Goal:** Implement Redis caching for performance optimization
 
-// Evict cache on update
-@CacheEvict(value = "odds", key = "#id")
-public OddsResponse updateOdds(Long id, UpdateOddsRequest request)
+**Progress:**
+
+**✅ Day 1: Docker & Redis Setup (COMPLETE)**
+- [x] Installed Docker Desktop for Windows
+- [x] Learned Docker fundamentals (images, containers, commands)
+- [x] Created Redis container with Alpine Linux (`redis:7-alpine`)
+- [x] Configured Docker to use D: drive (resource optimization)
+- [x] Tested Redis connection via Docker CLI
+- [x] Verified basic Redis operations (SET, GET, PING)
+- [x] Learned Docker container lifecycle (start, stop, restart)
+
+**Docker Setup:**
+```bash
+# Redis container running on port 6379
+docker run -d --name redis-betting -p 6379:6379 redis:7-alpine
+
+# Daily workflow:
+docker start redis-betting   # Start of day
+docker stop redis-betting    # End of day
 ```
 
+**✅ Day 2: Spring Boot + Redis Integration (COMPLETE)**
+- [x] Added Spring Data Redis dependency (`spring-boot-starter-data-redis`)
+- [x] Configured Redis connection in `application.properties`
+  - Host: localhost, Port: 6379, Database: 0
+  - Lettuce connection pooling (max-active: 8, max-idle: 8)
+- [x] Created `RedisConfig` class with RedisTemplate bean
+  - String serializer for keys (human-readable)
+  - JSON serializer for values (GenericJackson2JsonRedisSerializer)
+- [x] Created `RedisConnectionTest` with 3 test cases
+  - Basic connection test (set/get/delete)
+  - Complex object serialization test
+  - Key deletion verification
+- [x] All tests passing ✅ (Redis integration verified)
+
+**What We Built:**
+```
+src/main/java/com/gambling/betting_odds_api/
+├── config/
+│   └── RedisConfig.java             # Redis configuration & RedisTemplate
+├── src/main/resources/
+│   └── application.properties       # Redis connection settings
+└── src/test/java/
+    └── RedisConnectionTest.java     # Integration tests
+```
+
+**Technical Achievements:**
+- ✅ Docker containerization (industry-standard deployment)
+- ✅ Redis in-memory caching setup
+- ✅ Spring Data Redis integration
+- ✅ JSON serialization for cache data
+- ✅ Connection pooling with Lettuce client
+- ✅ Test-driven Redis configuration
+
+**What's Next (Day 3-4):**
+- [ ] Add `@Cacheable` to BettingOddsService methods
+- [ ] Implement cache eviction strategy
+- [ ] Measure performance improvements
+- [ ] Test cache hit/miss scenarios
+- [ ] Configure TTL (Time-To-Live) for cached data
+
+**Expected Results:**
+```
+Before Redis:  GET /api/odds/1 → ~50ms (database query)
+After Redis:   GET /api/odds/1 → ~2ms (cached) ⚡ 25x faster!
+```
 #### 4.2 Database Optimization
 - [ ] Query optimization (EXPLAIN ANALYZE)
 - [ ] N+1 problem resolution (JOIN FETCH)
@@ -1585,12 +1669,12 @@ If you have questions about the project or want to discuss implementation detail
 
 ## 📊 Project Statistics
 
-- **Lines of Code**: ~6,500 (Java + XML + Properties)
+- **Lines of Code**: ~7,000 (Java + XML + Properties)
 - **Total Commits**: 35+
-- **Features Completed**: Core CRUD + Logging + Testing + JWT Auth + RBAC
-- **Test Coverage**: ~95% (52/56 tests) ✅
+- **Features Completed**: Core CRUD + Logging + Testing + JWT Auth + RBAC + Docker + Redis Integration
+- **Test Coverage**: ~95% (52/56 tests) ✅ Excellent Coverage!
 - **API Endpoints**: 12 (10 protected + 2 public)
 - **Database Tables**: 2 (betting_odds, users)
 - **Log Files**: 5 (application, errors, audit, performance, security)
 - **Test Files**: 4 (Service, Mapper, Repository, Controller with JWT)
-- **Security Features**: JWT + BCrypt + Filter Chain + @PreAuthorize + Role-Based Tests
+- **Security Features**: JWT + BCrypt + Filter Chain + @PreAuthorize + Role-Based Authorization Tests

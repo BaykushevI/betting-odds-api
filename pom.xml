@@ -218,18 +218,19 @@
 			<scope>test</scope>
 		</dependency>
 
-		<!-- ───────────────────────────────────────────────────────────────────────
-			FUTURE DEPENDENCIES (Phase 4+)
-			───────────────────────────────────────────────────────────────────────
-			Uncomment when needed:
-			
-			Phase 4 - Caching:
-			<dependency>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-starter-data-redis</artifactId>
-			</dependency>
-		-->
-        
+		<!-- Spring Data Redis - Redis integration -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+	
+        <!-- Lettuce (Redis client) - Already included with spring-boot-starter-data-redis -->
+        <!-- But if you need specific version: -->
+        <dependency>
+            <groupId>io.lettuce</groupId>
+            <artifactId>lettuce-core</artifactId>
+        </dependency>
+
     </dependencies>
     
     <!-- ═══════════════════════════════════════════════════════════════════════════
