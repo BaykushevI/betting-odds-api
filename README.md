@@ -391,10 +391,11 @@ logs/
 | Component | Tests Written | Coverage | Status |
 |-----------|--------------|----------|--------|
 | **BettingOddsService** | 16/20 | ~80% | ✅ Week 1 Complete |
+| **BettingOddsServiceCache** | 16/16 | ~100% | ✅ Phase 4 Week 1 Day 3-4 Complete (Redis) |
 | **OddsMapper** | 8/8 | ~100% | ✅ Week 2 Day 5-6 Complete |
 | **BettingOddsRepository** | 10/10 | ~100% | ✅ Week 2 Day 7-9 Complete |
 | **BettingOddsController** | 18/18 | ~100% | ✅ Phase 3 Week 3 Day 10 Complete (Updated with JWT) |
-| **TOTAL** | **52/56** | **~95%** | 🎯 **Excellent Coverage! Target: 80%+ EXCEEDED! ✅** |
+| **TOTAL** | **68/72** | **~94%** | 🎯 **Excellent Coverage! Target: 80%+ EXCEEDED! ✅** |
 
 **What We Learned:**
 - ✅ JUnit 5 basics (test structure, assertions)
@@ -861,11 +862,15 @@ DELETE /api/odds/{id} - Allowed for ADMIN only
 - Database performance tuning basics
 - Docker fundamentals
 
-#### 📅 Week 1: Redis Caching (Days 1-3) ✅ **COMPLETE**
+#### 📅 Week 1: Redis Caching (Days 1-4) ✅ **COMPLETE**
 
 **Goal:** Implement Redis caching for dramatic performance improvement
 
 **Progress:**
+- [x] Day 1: Docker & Redis setup ✅
+- [x] Day 2: Spring Boot + Redis integration ✅
+- [x] Day 3: Caching annotations implementation (getOddsById) ✅
+- [x] Day 4: Pagination caching implementation ✅
 
 **Progress:**
 - [x] Day 1: Docker & Redis setup ✅
@@ -889,7 +894,30 @@ DELETE /api/odds/{id} - Allowed for ADMIN only
   - Fixed Jackson LocalDateTime serialization (JSR310 module)
   - Fixed Jackson type information (PolymorphicTypeValidator)
   - Tested all caching scenarios with Postman
+  - **Wrote 8 unit tests with Testcontainers** ✅
+  - **All cache tests passing (8/8)** ✅
   - **Performance improvement: 15-37x faster!** (750ms → 20-50ms) ⚡
+
+- [x] Day 4: Pagination Caching Implementation ✅
+  -Added `@Cacheable` to pagination methods
+  - `getAllOdds()` - caches first 3 pages (page 0-2)
+  - `getActiveOdds()` - caches first 3 pages
+  - `getOddsBySport()` - caches first 3 pages per sport
+  - `getUpcomingMatches()` - caches first 3 pages
+  - `getMatchesForTeam()` - caches first 3 pages per team
+- [x] Updated `@CacheEvict` annotations
+  - `createOdds()` - evicts ALL caches (single + pagination)
+  - `updateOdds()` - @CachePut (single) + @CacheEvict (pagination)
+  - `deactivateOdds()` - evicts ALL caches
+  - `deleteOdds()` - evicts ALL caches
+- [x] Added 8 new unit tests (total 16 tests) ✅
+  - Cache hit/miss for pagination
+  - Different pages create separate cache entries
+  - Page 3 not cached (condition: pageNumber < 3)
+  - Cache eviction on CREATE/UPDATE/DELETE
+  - Sport/Team-specific caching
+- [x] All tests passing ✅ (16/16)
+- [x] Comprehensive JavaDoc comments with production recommendations
 
 **Docker Setup:**
 ```bash
@@ -935,6 +963,10 @@ src/main/java/com/gambling/betting_odds_api/
 - ✅ Jackson type information for polymorphic types
 - ✅ Cache hit/miss scenarios
 - ✅ Cache eviction strategies
+- ✅ **Pagination caching with SpEL expressions** 🆕
+- ✅ **Conditional caching (condition attribute)** 🆕
+- ✅ **Multi-cache eviction (value array)** 🆕
+- ✅ **Integration testing with Testcontainers** 🆕
 
 **Caching Strategy Implemented:**
 ```java
@@ -949,21 +981,66 @@ PUT /api/odds/1 → Updates DB + Updates Redis cache
 DELETE /api/odds/1 → Deletes from DB + Removes from Redis
 PATCH /api/odds/1/deactivate → Updates DB + Removes from Redis
 ```
+**Pagination Caching (NEW in Day 4):**
+```java
+// Page 0-2 cached (fast!)
+GET /api/odds?page=0 →' First time: 750ms (DB query + cache)
+GET /api/odds?page=0 →' Second time: 20-50ms (from Redis) âš¡
+GET /api/odds?page=1 →' First time: 750ms (separate cache entry)
+GET /api/odds?page=1 →' Second time: 20-50ms (from Redis) âš¡
+
+// Page 3+ NOT cached (always query DB)
+GET /api/odds?page=3 →' Always: 750ms (condition: pageNumber < 3)
+
+// Sport-specific caching
+GET /api/odds/sport/Football?page=0 →' Cached separately from Basketball
+GET /api/odds/sport/Basketball?page=0 →' Independent cache
+
+// Team-specific caching
+GET /api/odds/team/Barcelona?page=0 →' Cached separately per team
+GET /api/odds/team/Real Madrid?page=0 →' Independent cache
+
+// Cache eviction on CREATE/UPDATE/DELETE
+POST /api/odds →' Evicts ALL caches (single + pagination)
+PUT /api/odds/1 →' Updates single cache + Evicts pagination caches
+DELETE /api/odds/1 →' Evicts ALL caches
 
 **Redis Configuration:**
+**Single Record Cache:**
 - Cache namespace: `odds`
 - Cache keys: `odds::{id}`
-- TTL: 30 minutes (configurable)
+- Example: `odds::123`
+
+**Pagination Caches (NEW):**
+- Cache namespace: `odds-all` (getAllOdds)
+  - Cache keys: `odds-all::{pageNumber}-{pageSize}-{sort}`
+  - Example: `odds-all::0-10-matchDate: DESC`
+  
+- Cache namespace: `odds-active` (getActiveOdds)
+  - Cache keys: `odds-active::{pageNumber}-{pageSize}-{sort}`
+  
+- Cache namespace: `odds-sport` (getOddsBySport)
+  - Cache keys: `odds-sport::{sport}-{pageNumber}-{pageSize}-{sort}`
+  - Example: `odds-sport::Football-0-10-matchDate: DESC`
+  
+- Cache namespace: `odds-upcoming` (getUpcomingMatches)
+  - Cache keys: `odds-upcoming::{pageNumber}-{pageSize}-{sort}`
+  
+- Cache namespace: `odds-team` (getMatchesForTeam)
+  - Cache keys: `odds-team::{teamName}-{pageNumber}-{pageSize}-{sort}`
+  - Example: `odds-team::Barcelona-0-10-matchDate: DESC`
+
+**Global Settings:**
+- TTL: 30 minutes (configurable in RedisConfig.java)
 - Serialization: JSON with type hints
 - Storage format: `["ClassName", {...data}]`
+- Page limit: First 3 pages only (page 0-2)
+
+**Production Recommendation:**
+- Consider shorter TTL (5-10 minutes) for live betting odds
+- Cache only page 0-1 for frequently changing data
 
 #### 📅 Week 1: Days 4-7 📋 **PLANNED**
-
-**Day 4:** Unit tests for caching behavior
-- Test cache hit/miss scenarios
-- Test @CachePut updates
-- Test @CacheEvict invalidation
-- Mock Redis for testing
 
 **Day 5-6:** Cache other methods
 - Add caching to `getAllOdds()` (with pagination)
@@ -1684,6 +1761,47 @@ Current configuration in `RedisConfig.java`:
 
 Betting odds change frequently in real gambling systems, so shorter TTL is recommended for production!
 
+## 🧪 Redis Caching Tests
+
+### Test Strategy
+All caching behavior is verified with **Testcontainers** - using a real Redis Docker container for integration testing.
+
+**Why Testcontainers?**
+- Uses actual Redis 7 Alpine container (same as production)
+- Automatic container lifecycle management
+- Industry-standard approach for integration testing
+- Catches serialization/deserialization issues
+- Tests real TTL and eviction behavior
+
+### Test Coverage (8/8 tests passing ✅)
+
+| Test | Description | Status |
+|------|-------------|--------|
+| `testCacheable_FirstCall` | First call caches the result | ✅ |
+| `testCacheable_SecondCall` | Second call returns from cache (no DB query) | ✅ |
+| `testCacheable_CacheMiss` | Cache miss queries database | ✅ |
+| `testCachePut_Update` | Update refreshes cache with new values | ✅ |
+| `testCachePut_MultipleUpdates` | Multiple updates keep cache fresh | ✅ |
+| `testCacheEvict_Delete` | Delete removes entry from cache | ✅ |
+| `testCacheEvict_Deactivate` | Deactivate removes entry from cache | ✅ |
+| `testCacheEvict_Deactivate_ForceQuery` | Deactivate forces next GET to query DB | ✅ |
+
+### Running Cache Tests
+```bash
+# Run all cache tests
+mvn test -Dtest=BettingOddsServiceCacheTest
+
+# Prerequisites: Docker Desktop must be running
+# Testcontainers will automatically pull redis:7-alpine image
+```
+
+### Test Isolation
+Each test:
+1. Starts with empty cache (cleared in `@BeforeEach`)
+2. Creates fresh test data in database
+3. Executes test scenario
+4. Cleans up test data in `@AfterEach`
+5. Redis container is shared across all tests for performance
 ## 🔒 Security Features
 
 ### Authentication & Authorization
@@ -1819,13 +1937,13 @@ If you have questions about the project or want to discuss implementation detail
 ## 📊 Project Statistics
 
 - **Lines of Code**: ~6,000 (Java + XML + Properties)
-- **Total Commits**: 35+
-- **Features Completed**: Core CRUD + Logging + Testing + JWT Authentication + Redis Caching ⚡
-- **Test Coverage**: ~92% (46/50 tests) ✅
+- **Total Commits**: 37+
+- **Features Completed**: Core CRUD + Logging + Testing + JWT Auth + Redis Caching ⚡
+- **Test Coverage**: ~93% (54/58 tests) ✅
 - **API Endpoints**: 12 (10 protected + 2 public)
 - **Database Tables**: 2 (betting_odds, users)
 - **Log Files**: 5 (application, errors, audit, performance, security)
-- **Test Files**: 4 (Service, Mapper, Repository, Controller)
+- **Test Files**: 5 (Service, Mapper, Repository, Controller, **CacheTest** ✅)
 - **Security Features**: JWT + BCrypt + Filter Chain + UserDetailsService
 - **Performance Features**: Redis Caching (15-37x faster) ⚡
 - **Docker Containers**: 1 (Redis 7 Alpine)
