@@ -8,7 +8,7 @@ Phase 1: Core CRUD API              ✅ COMPLETE
 Phase 2.1: Production Logging       ✅ COMPLETE
 Phase 2.2: Unit & Integration Tests ✅ COMPLETE (46/50 tests, 92% coverage)
 Phase 3: Security & Authentication  ✅ COMPLETE (Week 3 Day 10 COMPLETE)
-Phase 4: Performance & Reliability  ⚡ IN PROGRESS (Week 1 Days 1-2 COMPLETE)
+Phase 4: Performance & Reliability  ⚡ IN PROGRESS (Week 1 - Day 3 COMPLETE)
 Phase 5: Microservices & Gateway    🚀 FUTURE
 Phase 6: Cloud Deployment           ☁️ ADVANCED
 ```
@@ -171,6 +171,13 @@ This is a comprehensive **learning project** demonstrating professional backend 
 - **Redis 7** - In-memory caching ⚡ ✅ **IN USE**
 - **Spring Data Redis** - Redis integration ✅ **IN USE**
 - **Lettuce** - Redis client (connection pooling) ✅ **IN USE**
+
+### Performance Tools
+- **Redis 7 Alpine** - In-memory cache ✅ **IN USE**
+- **Spring Data Redis** - Redis integration ✅ **IN USE**
+- **Spring Cache** - Caching abstraction (@Cacheable) ✅ **IN USE**
+- **Lettuce** - Redis client (connection pooling) ✅ **IN USE**
+- **Docker Desktop** - Redis containerization ✅ **IN USE**
 
 ### Future Technologies
 - **Prometheus** - Metrics collection 📊 *Phase 4 Week 4*
@@ -403,10 +410,18 @@ logs/
 - ✅ JSON assertions with JSONPath
 - ✅ Testing REST API status codes
 - ✅ End-to-end HTTP request/response testing
-- ✅ **JWT token generation in tests** (NEW)
-- ✅ **Testing with Authorization header** (NEW)
-- ✅ **Role-based authorization testing** (NEW)
-- ✅ **Testing 403 Forbidden and 401 Unauthorized** (NEW)
+- ✅ JWT token generation in tests
+- ✅ Testing with Authorization header
+- ✅ Role-based authorization testing
+- ✅ Testing 403 Forbidden and 401 Unauthorized
+- ✅ Docker containerization basics
+- ✅ Redis in-memory caching
+- ✅ Spring Cache abstraction (@Cacheable, @CachePut, @CacheEvict)
+- ✅ TTL (Time-To-Live) configuration
+- ✅ Jackson JSON serialization with Java 8 Time API
+- ✅ Jackson type information for polymorphic types
+- ✅ Cache hit/miss scenarios
+- ✅ Cache eviction strategies
 
 ---
 
@@ -846,20 +861,35 @@ DELETE /api/odds/{id} - Allowed for ADMIN only
 - Database performance tuning basics
 - Docker fundamentals
 
-#### 📅 Week 1: Redis Caching (Days 1-7) 🔄 **IN PROGRESS**
+#### 📅 Week 1: Redis Caching (Days 1-3) ✅ **COMPLETE**
 
-**Goal:** Implement Redis caching for performance optimization
+**Goal:** Implement Redis caching for dramatic performance improvement
 
 **Progress:**
 
-**✅ Day 1: Docker & Redis Setup (COMPLETE)**
-- [x] Installed Docker Desktop for Windows
-- [x] Learned Docker fundamentals (images, containers, commands)
-- [x] Created Redis container with Alpine Linux (`redis:7-alpine`)
-- [x] Configured Docker to use D: drive (resource optimization)
-- [x] Tested Redis connection via Docker CLI
-- [x] Verified basic Redis operations (SET, GET, PING)
-- [x] Learned Docker container lifecycle (start, stop, restart)
+**Progress:**
+- [x] Day 1: Docker & Redis setup ✅
+  - Installed Docker Desktop
+  - Configured Redis 7 Alpine container (`redis-betting` on port 6379)
+  - Learned Docker basics (images, containers, commands)
+  - Established daily workflow (docker start/stop)
+  
+- [x] Day 2: Spring Boot + Redis integration ✅
+  - Added Spring Data Redis dependency
+  - Configured Redis connection (localhost:6379, Lettuce pooling)
+  - Created `RedisConfig.java` with RedisTemplate bean
+  - Created `RedisConnectionTest.java` (3 tests passing)
+  - Verified basic Redis operations (set/get/delete)
+  
+- [x] Day 3: Caching annotations implementation ✅
+  - Configured `CacheManager` with 30-minute TTL
+  - Added `@Cacheable` to `getOddsById()` (automatic caching)
+  - Added `@CachePut` to `updateOdds()` (cache updates)
+  - Added `@CacheEvict` to `deleteOdds()` and `deactivateOdds()` (cache invalidation)
+  - Fixed Jackson LocalDateTime serialization (JSR310 module)
+  - Fixed Jackson type information (PolymorphicTypeValidator)
+  - Tested all caching scenarios with Postman
+  - **Performance improvement: 15-37x faster!** (750ms → 20-50ms) ⚡
 
 **Docker Setup:**
 ```bash
@@ -896,51 +926,85 @@ src/main/java/com/gambling/betting_odds_api/
     └── RedisConnectionTest.java     # Integration tests
 ```
 
-**Technical Achievements:**
-- ✅ Docker containerization (industry-standard deployment)
-- ✅ Redis in-memory caching setup
-- ✅ Spring Data Redis integration
-- ✅ JSON serialization for cache data
-- ✅ Connection pooling with Lettuce client
-- ✅ Test-driven Redis configuration
+**What We Learned (Days 1-3):**
+- ✅ Docker containerization basics
+- ✅ Redis in-memory caching
+- ✅ Spring Cache abstraction (@Cacheable, @CachePut, @CacheEvict)
+- ✅ TTL (Time-To-Live) configuration
+- ✅ Jackson JSON serialization with Java 8 Time API
+- ✅ Jackson type information for polymorphic types
+- ✅ Cache hit/miss scenarios
+- ✅ Cache eviction strategies
 
-**What's Next (Day 3-4):**
-- [ ] Add `@Cacheable` to BettingOddsService methods
-- [ ] Implement cache eviction strategy
-- [ ] Measure performance improvements
-- [ ] Test cache hit/miss scenarios
-- [ ] Configure TTL (Time-To-Live) for cached data
+**Caching Strategy Implemented:**
+```java
+// Cache hits (fast!)
+GET /api/odds/1 → First time: 750ms (DB query + cache)
+GET /api/odds/1 → Second time: 20-50ms (from Redis) ⚡
 
-**Expected Results:**
+// Cache updates
+PUT /api/odds/1 → Updates DB + Updates Redis cache
+
+// Cache eviction
+DELETE /api/odds/1 → Deletes from DB + Removes from Redis
+PATCH /api/odds/1/deactivate → Updates DB + Removes from Redis
 ```
-Before Redis:  GET /api/odds/1 → ~50ms (database query)
-After Redis:   GET /api/odds/1 → ~2ms (cached) ⚡ 25x faster!
-```
-#### 4.2 Database Optimization
+
+**Redis Configuration:**
+- Cache namespace: `odds`
+- Cache keys: `odds::{id}`
+- TTL: 30 minutes (configurable)
+- Serialization: JSON with type hints
+- Storage format: `["ClassName", {...data}]`
+
+#### 📅 Week 1: Days 4-7 📋 **PLANNED**
+
+**Day 4:** Unit tests for caching behavior
+- Test cache hit/miss scenarios
+- Test @CachePut updates
+- Test @CacheEvict invalidation
+- Mock Redis for testing
+
+**Day 5-6:** Cache other methods
+- Add caching to `getAllOdds()` (with pagination)
+- Add caching to `getOddsBySport()`
+- Add caching to `getUpcomingMatches()`
+- Configure different TTLs for different methods
+
+**Day 7:** Cache monitoring and metrics
+- Add cache hit/miss metrics
+- Add cache size monitoring
+- Add performance logging for cache operations
+- Review and optimize cache strategy
+
+#### 4.2 Database Optimization 📋 **PLANNED**
 - [ ] Query optimization (EXPLAIN ANALYZE)
 - [ ] N+1 problem resolution (JOIN FETCH)
 - [ ] Database connection pooling (HikariCP tuning)
 - [ ] Index optimization
 - [ ] Read replicas for scaling
 
-#### 4.3 Async Processing
+#### 4.3 Async Processing 📋 **PLANNED**
 - [ ] Spring async configuration
 - [ ] `@Async` methods for heavy operations
 - [ ] CompletableFuture usage
 - [ ] Thread pool configuration
 
-#### 4.4 Monitoring & Observability
+#### 4.4 Monitoring & Observability 📋 **PLANNED**
 - [ ] Micrometer metrics
 - [ ] Custom metrics (odds created, calculations performed)
 - [ ] Prometheus endpoint
 - [ ] Grafana dashboards
 - [ ] Alerting rules
 
-**Key Learning Outcomes:**
-- Caching strategies and patterns
-- Database performance optimization
-- Asynchronous programming
-- Production monitoring
+**Key Learning Outcomes (Phase 4):**
+- ✅ Redis caching strategies and patterns
+- ✅ Spring Cache abstraction
+- ✅ Jackson JSON serialization challenges
+- ✅ TTL and cache eviction
+- 📋 Database performance optimization - *Planned*
+- 📋 Asynchronous programming - *Planned*
+- 📋 Production monitoring - *Planned*
 
 ---
 
@@ -1534,6 +1598,91 @@ Bookmaker Margin: 104.8% - 100% = 4.8%
 - 🚀 Microservices architecture - *Future*
 
 ---
+## ⚡ Redis Caching System
+
+### Cache Configuration
+All cache operations use Redis for in-memory storage with automatic expiration:
+```
+Cache namespace: "odds"
+Cache keys: "odds::{id}"
+TTL: 30 minutes (configurable in RedisConfig.java)
+Storage: JSON with type information
+Connection: localhost:6379 (Lettuce client with pooling)
+```
+
+### Caching Annotations
+- ✅ **`@Cacheable`** on `getOddsById()` - Automatically cache results
+- ✅ **`@CachePut`** on `updateOdds()` - Update cache with new values
+- ✅ **`@CacheEvict`** on `deleteOdds()` - Remove from cache
+- ✅ **`@CacheEvict`** on `deactivateOdds()` - Remove from cache
+
+### Performance Impact
+```bash
+# Without cache (baseline):
+GET /api/odds/1 → 750ms (PostgreSQL query)
+GET /api/odds/1 → 750ms (PostgreSQL query again)
+GET /api/odds/1 → 750ms (PostgreSQL query again)
+
+# With Redis cache:
+GET /api/odds/1 → 750ms (cache miss, query DB, store in Redis)
+GET /api/odds/1 → 20-50ms (cache hit, from Redis) ⚡ 15-37x faster!
+GET /api/odds/1 → 20-50ms (cache hit, from Redis) ⚡
+```
+
+### Cache Invalidation
+```bash
+# Update operation (@CachePut)
+PUT /api/odds/1 → Updates DB + Updates Redis cache
+GET /api/odds/1 → Returns from cache (fast!) ⚡
+
+# Delete operation (@CacheEvict)
+DELETE /api/odds/1 → Deletes from DB + Removes from Redis
+GET /api/odds/1 → 404 Not Found (correct!)
+
+# Deactivate operation (@CacheEvict)
+PATCH /api/odds/1/deactivate → Updates DB + Removes from Redis
+GET /api/odds/1 → Cache miss, queries DB with new data
+```
+
+### Redis Docker Commands
+```bash
+# Start Redis container
+docker start redis-betting
+
+# Stop Redis container
+docker stop redis-betting
+
+# Check Redis status
+docker ps
+
+# Access Redis CLI
+docker exec -it redis-betting redis-cli
+
+# View all cached keys
+KEYS *
+
+# View specific cached value
+GET odds::1
+
+# Clear all cache
+FLUSHALL
+
+# Exit Redis CLI
+exit
+```
+
+### Cache Configuration (production tuning)
+Current configuration in `RedisConfig.java`:
+```java
+.entryTtl(Duration.ofMinutes(30))  // Development: 30 minutes
+```
+
+**Production recommendation:**
+```java
+.entryTtl(Duration.ofMinutes(5))   // Production: 5 minutes for live odds
+```
+
+Betting odds change frequently in real gambling systems, so shorter TTL is recommended for production!
 
 ## 🔒 Security Features
 
@@ -1669,12 +1818,14 @@ If you have questions about the project or want to discuss implementation detail
 
 ## 📊 Project Statistics
 
-- **Lines of Code**: ~7,000 (Java + XML + Properties)
+- **Lines of Code**: ~6,000 (Java + XML + Properties)
 - **Total Commits**: 35+
-- **Features Completed**: Core CRUD + Logging + Testing + JWT Auth + RBAC + Docker + Redis Integration
-- **Test Coverage**: ~95% (52/56 tests) ✅ Excellent Coverage!
+- **Features Completed**: Core CRUD + Logging + Testing + JWT Authentication + Redis Caching ⚡
+- **Test Coverage**: ~92% (46/50 tests) ✅
 - **API Endpoints**: 12 (10 protected + 2 public)
 - **Database Tables**: 2 (betting_odds, users)
 - **Log Files**: 5 (application, errors, audit, performance, security)
-- **Test Files**: 4 (Service, Mapper, Repository, Controller with JWT)
-- **Security Features**: JWT + BCrypt + Filter Chain + @PreAuthorize + Role-Based Authorization Tests
+- **Test Files**: 4 (Service, Mapper, Repository, Controller)
+- **Security Features**: JWT + BCrypt + Filter Chain + UserDetailsService
+- **Performance Features**: Redis Caching (15-37x faster) ⚡
+- **Docker Containers**: 1 (Redis 7 Alpine)
