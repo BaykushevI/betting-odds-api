@@ -231,6 +231,12 @@
             <artifactId>lettuce-core</artifactId>
         </dependency>
 
+        <!-- Jackson Java 8 Date/Time support (for LocalDateTime serialization) -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
+
     </dependencies>
     
     <!-- ═══════════════════════════════════════════════════════════════════════════
