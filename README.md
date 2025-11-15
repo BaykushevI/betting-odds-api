@@ -8,7 +8,7 @@ Phase 1: Core CRUD API              ✅ COMPLETE
 Phase 2.1: Production Logging       ✅ COMPLETE
 Phase 2.2: Unit & Integration Tests ✅ COMPLETE (46/50 tests, 92% coverage)
 Phase 3: Security & Authentication  ✅ COMPLETE (Week 3 Day 10 COMPLETE)
-Phase 4: Performance & Reliability  ⚡ IN PROGRESS (Week 1 - Day 3 COMPLETE)
+Phase 4: Performance & Reliability  ⚡ IN PROGRESS (Week 1 COMPLETE - Days 1-6 ✅)
 Phase 5: Microservices & Gateway    🚀 FUTURE
 Phase 6: Cloud Deployment           ☁️ ADVANCED
 ```
@@ -171,6 +171,8 @@ This is a comprehensive **learning project** demonstrating professional backend 
 - **Redis 7** - In-memory caching ⚡ ✅ **IN USE**
 - **Spring Data Redis** - Redis integration ✅ **IN USE**
 - **Lettuce** - Redis client (connection pooling) ✅ **IN USE**
+- **Spring AOP** - Aspect-oriented programming ✅ **IN USE**
+- **Micrometer** - Application metrics (already in Actuator) ✅ **IN USE**
 
 ### Performance Tools
 - **Redis 7 Alpine** - In-memory cache ✅ **IN USE**
@@ -862,7 +864,7 @@ DELETE /api/odds/{id} - Allowed for ADMIN only
 - Database performance tuning basics
 - Docker fundamentals
 
-#### 📅 Week 1: Redis Caching (Days 1-4) ✅ **COMPLETE**
+#### 📅 Week 1: Redis Caching (Days 1-6) ✅ **COMPLETE**
 
 **Goal:** Implement Redis caching for dramatic performance improvement
 
@@ -919,6 +921,41 @@ DELETE /api/odds/{id} - Allowed for ADMIN only
 - [x] All tests passing ✅ (16/16)
 - [x] Comprehensive JavaDoc comments with production recommendations
 
+**✅ Day 5: Cache Monitoring & Admin Endpoints (COMPLETE)**
+- [x] Created CacheStatisticsService
+  - getAllCacheStatistics() - get stats for all caches
+  - getCacheStatistics(cacheName) - get stats for specific cache
+  - clearAllCaches() - clear all caches (destructive!)
+  - clearCache(cacheName) - clear specific cache
+  - isRedisHealthy() - check Redis connectivity
+  - getCacheHealth() - comprehensive health status
+- [x] Created CacheAdminController (ADMIN only)
+  - GET /api/admin/cache/stats - cache statistics
+  - GET /api/admin/cache/{name}/stats - specific cache stats
+  - GET /api/admin/cache/health - cache health check
+  - POST /api/admin/cache/clear - clear all caches
+  - POST /api/admin/cache/{name}/clear - clear specific cache
+- [x] All endpoints secured with @PreAuthorize("hasRole('ADMIN')")
+- [x] Comprehensive JavaDoc documentation
+
+**✅ Day 6: Cache Event Logging & Metrics (COMPLETE)**
+- [x] Created CacheEventLogger (error handling)
+  - Custom CacheErrorHandler implementation
+  - Graceful degradation on cache failures
+  - Detailed error logging for debugging
+  - Prevents cache errors from breaking app
+- [x] Extended PerformanceLogger with cache metrics
+  - logCacheOperation() - track cache hits/misses
+  - Performance thresholds for cache operations
+  - Automatic slow operation detection
+- [x] Created CacheMonitoringAspect (optional)
+  - Automatic monitoring of @Cacheable methods
+  - Automatic monitoring of @CachePut methods
+  - Automatic monitoring of @CacheEvict methods
+  - AOP-based performance tracking
+- [x] Added Spring AOP dependency
+- [x] Production-ready cache monitoring system ✅
+
 **Docker Setup:**
 ```bash
 # Redis container running on port 6379
@@ -954,7 +991,7 @@ src/main/java/com/gambling/betting_odds_api/
     └── RedisConnectionTest.java     # Integration tests
 ```
 
-**What We Learned (Days 1-3):**
+**What We Learned (Days 1-6):**
 - ✅ Docker containerization basics
 - ✅ Redis in-memory caching
 - ✅ Spring Cache abstraction (@Cacheable, @CachePut, @CacheEvict)
@@ -963,10 +1000,14 @@ src/main/java/com/gambling/betting_odds_api/
 - ✅ Jackson type information for polymorphic types
 - ✅ Cache hit/miss scenarios
 - ✅ Cache eviction strategies
-- ✅ **Pagination caching with SpEL expressions** 🆕
-- ✅ **Conditional caching (condition attribute)** 🆕
-- ✅ **Multi-cache eviction (value array)** 🆕
-- ✅ **Integration testing with Testcontainers** 🆕
+- ✅ Pagination caching with SpEL expressions
+- ✅ Conditional caching (condition attribute)
+- ✅ Multi-cache eviction (value array)
+- ✅ Integration testing with Testcontainers
+- ✅ **Cache monitoring and health checks** 🆕
+- ✅ **Admin endpoints for cache management** 🆕
+- ✅ **Error handling for cache operations** 🆕
+- ✅ **AOP-based performance monitoring** 🆕
 
 **Caching Strategy Implemented:**
 ```java
@@ -1321,6 +1362,79 @@ Headers: {
   "Authorization": "Bearer eyJhbGciOiJIUzI1NiJ9..."
 }
 ```
+### Cache Admin Endpoints (ADMIN Only)
+
+**⚠️ Security:** All cache admin endpoints require ADMIN role!
+
+| Method | Endpoint | Description | Auth Required | Min Role |
+|--------|----------|-------------|---------------|----------|
+| GET | `/api/admin/cache/stats` | Get statistics for all caches | ✅ | ADMIN |
+| GET | `/api/admin/cache/{name}/stats` | Get statistics for specific cache | ✅ | ADMIN |
+| GET | `/api/admin/cache/health` | Check cache health status | ✅ | ADMIN |
+| POST | `/api/admin/cache/clear` | Clear all caches (destructive!) | ✅ | ADMIN |
+| POST | `/api/admin/cache/{name}/clear` | Clear specific cache | ✅ | ADMIN |
+
+**Example Usage:**
+```bash
+# Login as ADMIN
+POST /api/auth/login
+Content-Type: application/json
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+# Get cache health
+GET /api/admin/cache/health
+Authorization: Bearer 
+
+Response:
+{
+  "status": "UP",
+  "cacheManager": "RedisCacheManager",
+  "cacheCount": 6,
+  "cacheNames": ["odds", "odds-all", "odds-active", "odds-sport", "odds-upcoming", "odds-team"]
+}
+
+# Get cache statistics
+GET /api/admin/cache/stats
+Authorization: Bearer 
+
+Response:
+{
+  "odds": {
+    "name": "odds",
+    "type": "RedisCache",
+    "nativeType": "RedisCache"
+  },
+  "odds-all": { ... }
+}
+
+# Clear all caches (use with caution!)
+POST /api/admin/cache/clear
+Authorization: Bearer 
+
+Response:
+{
+  "message": "All caches cleared successfully",
+  "warning": "All subsequent requests will query database until cache rebuilds"
+}
+
+# Clear specific cache
+POST /api/admin/cache/odds/clear
+Authorization: Bearer 
+
+Response:
+{
+  "message": "Cache 'odds' cleared successfully"
+}
+```
+
+**⚠️ Production Warning:**
+- Clearing caches causes temporary performance degradation
+- All requests will query database until cache rebuilds
+- Use only for maintenance or debugging
+- Consider scheduling during low-traffic periods
 
 ### Odds Management (Protected - Requires Authentication + Role-Based Authorization)
 
@@ -1936,14 +2050,15 @@ If you have questions about the project or want to discuss implementation detail
 
 ## 📊 Project Statistics
 
-- **Lines of Code**: ~6,000 (Java + XML + Properties)
-- **Total Commits**: 37+
-- **Features Completed**: Core CRUD + Logging + Testing + JWT Auth + Redis Caching ⚡
-- **Test Coverage**: ~93% (54/58 tests) ✅
-- **API Endpoints**: 12 (10 protected + 2 public)
+- **Lines of Code**: ~7,500 (Java + XML + Properties)
+- **Total Commits**: 38+
+- **Features Completed**: Core CRUD + Logging + Testing + JWT Authentication + Redis Caching + Cache Monitoring ⚡
+- **Test Coverage**: ~94% (68/72 tests) ✅
+- **API Endpoints**: 17 (10 protected + 2 public + 5 admin)
 - **Database Tables**: 2 (betting_odds, users)
 - **Log Files**: 5 (application, errors, audit, performance, security)
-- **Test Files**: 5 (Service, Mapper, Repository, Controller, **CacheTest** ✅)
-- **Security Features**: JWT + BCrypt + Filter Chain + UserDetailsService
-- **Performance Features**: Redis Caching (15-37x faster) ⚡
+- **Test Files**: 5 (Service, Mapper, Repository, Controller, ServiceCache)
+- **Security Features**: JWT + BCrypt + Filter Chain + UserDetailsService + Role-based Authorization
+- **Performance Features**: Redis Caching (15-37x faster) + Cache Monitoring + Admin Endpoints ⚡
 - **Docker Containers**: 1 (Redis 7 Alpine)
+- **Cache Namespaces**: 6 (odds, odds-all, odds-active, odds-sport, odds-upcoming, odds-team)
