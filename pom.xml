@@ -251,6 +251,12 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Spring AOP - Aspect-Oriented Programming -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+
     </dependencies>
     
     <!-- ═══════════════════════════════════════════════════════════════════════════

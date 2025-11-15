@@ -328,6 +328,77 @@ public class PerformanceLogger {
         
         PERF_LOG.info(message);
     }
+    // ═══════════════════════════════════════════════════════════════════════════
+    // CACHE PERFORMANCE MONITORING (Phase 4 Day 6)
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Log cache operation performance.
+     * 
+     * Tracks Redis cache operations:
+     * - Cache hits (fast retrieval from Redis)
+     * - Cache misses (fallback to database)
+     * - Cache updates (@CachePut)
+     * - Cache evictions (@CacheEvict)
+     * 
+     * Example log output (Cache HIT):
+     * 2025-11-13 22:00:15.123 | PERF | CACHE | Operation=GET | Status=HIT | 
+     * Cache=getOddsById | ExecutionTime=25ms | Level=NORMAL | 
+     * Timestamp=2025-11-13 22:00:15.123
+     * 
+     * Example log output (Cache MISS):
+     * 2025-11-13 22:00:16.456 | PERF | CACHE | Operation=GET | Status=MISS | 
+     * Cache=getOddsById | ExecutionTime=750ms | Level=SLOW | 
+     * Timestamp=2025-11-13 22:00:16.456
+     * 
+     * Performance expectations:
+     * - Cache HIT: < 50ms (excellent)
+     * - Cache MISS: Similar to DB query time (750ms+)
+     * - Cache PUT: < 100ms
+     * - Cache EVICT: < 50ms
+     * 
+     * @param operation Cache operation (GET, PUT, EVICT, CLEAR)
+     * @param cacheName Cache name or method name
+     * @param executionTimeMs Execution time in milliseconds
+     * @param hit Whether it was a cache hit (true) or miss (false)
+     */
+    public void logCacheOperation(String operation, String cacheName, 
+                                long executionTimeMs, boolean hit) {
+        String status = hit ? "HIT" : "MISS";
+        
+        // Determine if operation is slow
+        // Cache hits should be very fast (< 50ms)
+        // Cache misses will be slow (database query time)
+        String level;
+        if (hit && executionTimeMs < 50) {
+            level = "NORMAL"; // Fast cache hit (expected)
+        } else if (!hit && executionTimeMs > SLOW_DB_QUERY_THRESHOLD) {
+            level = "SLOW"; // Slow cache miss (expected for DB query)
+        } else if (hit && executionTimeMs > 100) {
+            level = "SLOW"; // Slow cache hit (UNEXPECTED - Redis problem?)
+        } else {
+            level = "NORMAL";
+        }
+        
+        String message = String.format(
+            "CACHE | Operation=%s | Status=%s | Cache=%s | ExecutionTime=%dms | " +
+            "Level=%s | Timestamp=%s",
+            operation, status, cacheName, executionTimeMs, level,
+            LocalDateTime.now().format(TIMESTAMP_FORMATTER)
+        );
+        
+        // Log based on level
+        if ("SLOW".equals(level) && hit) {
+            // Slow cache hit is UNUSUAL - Redis might have issues
+            PERF_LOG.warn(message);
+        } else if ("SLOW".equals(level) && !hit) {
+            // Slow cache miss is EXPECTED (DB query)
+            PERF_LOG.info(message);
+        } else {
+            // Normal operations
+            PERF_LOG.debug(message);
+        }
+    }
     
     // ═══════════════════════════════════════════════════════════════════════
     // FUTURE ENHANCEMENTS
