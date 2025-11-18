@@ -237,7 +237,6 @@ class BettingOddsServiceCacheTest {
     }
 
     @Test
-    @Disabled("Temporarily disabled - needs update for createdBy relationship")
     @DisplayName("@Cacheable: Cache miss should query database")
     void testCacheable_CacheMiss_ShouldQueryDatabase() {
         // Arrange - Cache should be empty
