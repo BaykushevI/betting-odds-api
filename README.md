@@ -1318,14 +1318,65 @@ WHERE o.active = true;                                  -- 1 query only!
 - Total Week 2 tests: 21/21 passing [x]
 
 ---
-#### Week 3-4: Future Optimizations [PLANNED]
+#### 📅 Week 3: Async Processing & Advanced Optimization (Days 12-14)
 
-**Week 3: Async Processing & Advanced Optimization**
-- [ ] Day 12-14: Spring async configuration
-  - [ ] @Async methods for heavy operations
-  - [ ] CompletableFuture usage
-  - [ ] Thread pool configuration
-  - [ ] Async exception handling
+**Goal:** Implement async processing for heavy operations
+
+**Day 12: Spring Async Configuration [COMPLETE]**
+- [x] Created AsyncConfig class with thread pool
+  - Core pool size: 5 threads (always alive)
+  - Max pool size: 10 threads (grows on demand)
+  - Queue capacity: 25 tasks (buffered before rejection)
+  - Thread name prefix: "Async-" (for debugging)
+  - Graceful shutdown: waits 30s for tasks to complete
+- [x] Custom exception handler (AsyncUncaughtExceptionHandler)
+  - Logs exceptions instead of silent failures
+  - Includes method name and parameters in error logs
+- [x] @EnableAsync annotation activated
+- [x] Thread pool configured and verified in startup logs
+
+**What We Built:**
+```
+src/main/java/com/gambling/betting_odds_api/
+├── config/
+│   └── AsyncConfig.java             # Async configuration [NEW Day 12]
+│       ├── ThreadPoolTaskExecutor    # Thread pool setup
+│       ├── CustomAsyncExceptionHandler  # Error handling
+│       └── @EnableAsync              # Async activation
+```
+
+**Thread Pool Configuration:**
+```
+Core Threads: 5 (always alive, low idle overhead)
+Max Threads: 10 (handles traffic spikes)
+Queue: 25 tasks (buffer before scaling up)
+Shutdown: 30s graceful timeout
+
+Request Flow:
+- First 5 tasks → Core threads (immediate execution)
+- Tasks 6-30 → Queue (buffered)
+- Tasks 31-35 → On-demand threads (scale up)
+- Beyond capacity → RejectedExecutionException
+```
+
+**Key Learning Outcomes (Day 12):**
+- [x] Spring async configuration basics
+- [x] ThreadPoolTaskExecutor setup
+- [x] Graceful shutdown patterns
+- [x] Exception handling in async methods
+- [x] Thread naming for debugging
+
+**Day 13: @Async Methods Implementation [PLANNED]**
+- [ ] Identify heavy operations for async processing
+- [ ] Create async service methods
+- [ ] Return CompletableFuture<T>
+- [ ] Handle async exceptions
+
+**Day 14: Testing Async Operations [PLANNED]**
+- [ ] Write unit tests for async methods
+- [ ] Test CompletableFuture completion
+- [ ] Test async exception handling
+- [ ] Performance comparison (sync vs async)
 
 **Week 4: Monitoring & Observability**
 - [ ] Day 15-17: Micrometer metrics
